@@ -1,0 +1,29 @@
+[
+  {
+    "id": "1",
+    "title": "PAC Welcome Back BBQ",
+    "date": "2026-03-15",
+    "time": "11:30",
+    "location": "School Gymnasium",
+    "description": "Join us for our annual Welcome Back BBQ! Meet other parents, learn about PAC initiatives for the year, and enjoy some great food. All families are welcome.",
+    "createdAt": "2026-02-01T10:00:00Z"
+  },
+  {
+    "id": "2",
+    "title": "Monthly PAC Meeting",
+    "date": "2026-03-05",
+    "time": "19:00",
+    "location": "School Library",
+    "description": "Regular monthly PAC meeting. Agenda includes budget review, upcoming fundraiser planning, and guest speaker from the school district on new curriculum updates.",
+    "createdAt": "2026-02-01T10:00:00Z"
+  },
+  {
+    "id": "3",
+    "title": "Spring Fundraiser Gala",
+    "date": "2026-04-20",
+    "time": "18:00",
+    "location": "Community Centre Hall",
+    "description": "Our biggest fundraising event of the year! Silent auction, dinner, and entertainment. Tickets available through the school office. All proceeds go to playground renovation.",
+    "createdAt": "2026-02-05T10:00:00Z"
+  }
+]

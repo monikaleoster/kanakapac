@@ -1,0 +1,26 @@
+[
+  {
+    "id": "1",
+    "title": "Volunteer Opportunities Available",
+    "content": "We are looking for parent volunteers to help with our upcoming Spring Gala. If you can donate a few hours of your time, please contact the PAC at pac@school.ca. We need help with setup, decorations, silent auction coordination, and cleanup.",
+    "priority": "normal",
+    "publishedAt": "2026-02-01T10:00:00Z",
+    "expiresAt": null
+  },
+  {
+    "id": "2",
+    "title": "Hot Lunch Program - Menu Change",
+    "content": "Please note that the hot lunch menu for March has been updated. New options include vegetarian and gluten-free choices. Orders must be placed by February 28. Visit the school website to place your order.",
+    "priority": "normal",
+    "publishedAt": "2026-02-08T10:00:00Z",
+    "expiresAt": "2026-02-28T23:59:59Z"
+  },
+  {
+    "id": "3",
+    "title": "Emergency PAC Meeting Rescheduled",
+    "content": "Due to inclement weather, the PAC meeting originally scheduled for February 10 has been rescheduled to February 12 at 7:00 PM. Same location: School Library. We apologize for any inconvenience.",
+    "priority": "urgent",
+    "publishedAt": "2026-02-09T10:00:00Z",
+    "expiresAt": "2026-02-13T00:00:00Z"
+  }
+]
