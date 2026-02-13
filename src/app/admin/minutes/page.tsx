@@ -8,6 +8,7 @@ interface MinutesData {
   title: string;
   date: string;
   content: string;
+  fileUrl?: string; // Add optional fileUrl
   createdAt: string;
 }
 
@@ -15,6 +16,7 @@ const emptyMinutes = {
   title: "",
   date: "",
   content: "",
+  fileUrl: "", // Add default empty fileUrl
 };
 
 export default function AdminMinutesPage() {
@@ -40,6 +42,7 @@ export default function AdminMinutesPage() {
       title: item.title,
       date: item.date,
       content: item.content,
+      fileUrl: item.fileUrl || "",
     });
     setShowForm(true);
   }
@@ -48,6 +51,29 @@ export default function AdminMinutesPage() {
     setEditing(null);
     setForm(emptyMinutes);
     setShowForm(true);
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+
+      const data = await res.json();
+      setForm((prev) => ({ ...prev, fileUrl: data.fileUrl }));
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("File upload failed. Please try again.");
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -135,6 +161,22 @@ export default function AdminMinutesPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   required
                 />
+              </div>
+              <div className="col-span-1 md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Upload Minutes (PDF, DOC, DOCX, TXT)
+                </label>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.txt"
+                  onChange={handleFileChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+                {form.fileUrl && (
+                  <p className="mt-1 text-sm text-green-600">
+                    File uploaded: {form.fileUrl.split("/").pop()}
+                  </p>
+                )}
               </div>
             </div>
             <div>

@@ -1,13 +1,16 @@
 import Link from "next/link";
+import { getSchoolSettings } from "@/lib/data";
 
 export default function Footer() {
+  const settings = getSchoolSettings();
+
   return (
     <footer className="bg-gray-800 text-gray-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
             <h3 className="text-white text-lg font-semibold mb-4">
-              Kanaka PAC
+              {settings.pacName}
             </h3>
             <p className="text-sm">
               The Parent Advisory Council works to support and enhance the
@@ -52,14 +55,14 @@ export default function Footer() {
               Contact Info
             </h3>
             <ul className="space-y-2 text-sm">
-              <li>Kanaka Elementary School</li>
-              <li>Maple Ridge, BC</li>
-              <li>pac@kanakaelementary.ca</li>
+              <li>{settings.address}</li>
+              <li>{settings.city}</li>
+              <li>{settings.email}</li>
             </ul>
           </div>
         </div>
         <div className="border-t border-gray-700 mt-8 pt-8 text-center text-sm">
-          <p>&copy; {new Date().getFullYear()} Kanaka Parent Advisory Council. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} {settings.pacName}. All rights reserved.</p>
           <Link
             href="/admin"
             className="text-gray-500 hover:text-gray-400 text-xs mt-2 inline-block"

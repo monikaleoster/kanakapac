@@ -1,5 +1,6 @@
 import { getUpcomingEvents, getPastEvents } from "@/lib/data";
 import EventCard from "@/components/EventCard";
+import SubscribeForm from "@/components/SubscribeForm";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +41,7 @@ export default function EventsPage() {
 
       {/* Past Events */}
       {past.length > 0 && (
-        <section>
+        <section className="mb-12">
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">
             Past Events
           </h2>
@@ -51,6 +52,11 @@ export default function EventsPage() {
           </div>
         </section>
       )}
+
+      {/* Subscription */}
+      <SubscribeForm />
     </div>
   );
 }
+
+

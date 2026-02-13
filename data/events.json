@@ -25,5 +25,14 @@
     "location": "Community Centre Hall",
     "description": "Our biggest fundraising event of the year! Silent auction, dinner, and entertainment. Tickets available through the school office. All proceeds go to playground renovation.",
     "createdAt": "2026-02-05T10:00:00Z"
+  },
+  {
+    "id": "de7e1da1-350f-4fb7-8ac9-88fe6099f367",
+    "title": "Test Event",
+    "date": "202612-02-26",
+    "time": "10:00",
+    "location": "School Hall",
+    "description": "This is a test event created by automation.",
+    "createdAt": "2026-02-13T06:57:25.031Z"
   }
 ]

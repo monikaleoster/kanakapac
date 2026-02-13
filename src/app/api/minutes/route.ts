@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
     title: body.title,
     date: body.date,
     content: body.content,
+    fileUrl: body.fileUrl,
     createdAt: body.createdAt || new Date().toISOString(),
   };
 

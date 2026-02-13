@@ -1,34 +1,18 @@
 import fs from "fs";
 import path from "path";
+import {
+  Event,
+  Minutes,
+  Announcement,
+  Policy,
+  TeamMember,
+  Subscriber,
+  SchoolSettings,
+  defaultSettings,
+} from "./types";
+import { unstable_noStore as noStore } from "next/cache";
 
 const dataDir = path.join(process.cwd(), "data");
-
-export interface Event {
-  id: string;
-  title: string;
-  date: string;
-  time: string;
-  location: string;
-  description: string;
-  createdAt: string;
-}
-
-export interface Minutes {
-  id: string;
-  title: string;
-  date: string;
-  content: string;
-  createdAt: string;
-}
-
-export interface Announcement {
-  id: string;
-  title: string;
-  content: string;
-  priority: "normal" | "urgent";
-  publishedAt: string;
-  expiresAt: string | null;
-}
 
 function readJsonFile<T>(filename: string): T[] {
   const filePath = path.join(dataDir, filename);
@@ -147,4 +131,85 @@ export function deleteAnnouncement(id: string): void {
     (a) => a.id !== id
   );
   writeJsonFile("announcements.json", all);
+}
+
+// Policies
+export function getPolicies(): Policy[] {
+  return readJsonFile<Policy>("policies.json").sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  );
+}
+
+export function getPolicyById(id: string): Policy | undefined {
+  return getPolicies().find((p) => p.id === id);
+}
+
+export function savePolicy(policy: Policy): void {
+  const all = readJsonFile<Policy>("policies.json");
+  const index = all.findIndex((p) => p.id === policy.id);
+  if (index >= 0) {
+    all[index] = policy;
+  } else {
+    all.push(policy);
+  }
+  writeJsonFile("policies.json", all);
+}
+
+export function deletePolicy(id: string): void {
+  const all = readJsonFile<Policy>("policies.json").filter((p) => p.id !== id);
+  writeJsonFile("policies.json", all);
+}
+
+// Team Members
+export function getTeamMembers(): TeamMember[] {
+  return readJsonFile<TeamMember>("team.json").sort((a, b) => a.order - b.order);
+}
+
+export function getTeamMemberById(id: string): TeamMember | undefined {
+  return getTeamMembers().find((t) => t.id === id);
+}
+
+export function saveTeamMember(member: TeamMember): void {
+  const all = readJsonFile<TeamMember>("team.json");
+  const index = all.findIndex((t) => t.id === member.id);
+  if (index >= 0) {
+    all[index] = member;
+  } else {
+    all.push(member);
+  }
+  writeJsonFile("team.json", all);
+}
+
+export function deleteTeamMember(id: string): void {
+  const all = readJsonFile<TeamMember>("team.json").filter((t) => t.id !== id);
+  writeJsonFile("team.json", all);
+}
+
+// Subscribers
+export function getSubscribers(): Subscriber[] {
+  return readJsonFile<Subscriber>("subscribers.json").sort(
+    (a, b) => new Date(b.subscribedAt).getTime() - new Date(a.subscribedAt).getTime()
+  );
+}
+
+export function saveSubscriber(subscriber: Subscriber): void {
+  const all = readJsonFile<Subscriber>("subscribers.json");
+  if (!all.find((s) => s.email === subscriber.email)) {
+    all.push(subscriber);
+    writeJsonFile("subscribers.json", all);
+  }
+}
+
+// School Settings
+export function getSchoolSettings(): SchoolSettings {
+  noStore();
+  const settings = readJsonFile<SchoolSettings>("settings.json");
+  if (settings.length === 0) {
+    return defaultSettings;
+  }
+  return { ...defaultSettings, ...settings[0] };
+}
+
+export function saveSchoolSettings(settings: SchoolSettings): void {
+  writeJsonFile("settings.json", [settings]);
 }

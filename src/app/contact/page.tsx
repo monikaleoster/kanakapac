@@ -1,9 +1,15 @@
+import { getSchoolSettings } from "@/lib/data";
+
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Contact - Kanaka PAC",
   description: "Get in touch with the Kanaka Parent Advisory Council.",
 };
 
 export default function ContactPage() {
+  const settings = getSchoolSettings();
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <h1 className="text-3xl font-bold text-gray-900 mb-2">Contact Us</h1>
@@ -36,7 +42,7 @@ export default function ContactPage() {
                 </svg>
                 <div>
                   <p className="font-medium text-gray-900">Email</p>
-                  <p className="text-gray-600">pac@kanakaelementary.ca</p>
+                  <p className="text-gray-600">{settings.email}</p>
                 </div>
               </div>
               <div className="flex items-start">
@@ -61,8 +67,8 @@ export default function ContactPage() {
                 </svg>
                 <div>
                   <p className="font-medium text-gray-900">Location</p>
-                  <p className="text-gray-600">Kanaka Elementary School</p>
-                  <p className="text-gray-600">Maple Ridge, BC</p>
+                  <p className="text-gray-600">{settings.address}</p>
+                  <p className="text-gray-600">{settings.city}</p>
                 </div>
               </div>
               <div className="flex items-start">
@@ -82,9 +88,9 @@ export default function ContactPage() {
                 <div>
                   <p className="font-medium text-gray-900">Meeting Times</p>
                   <p className="text-gray-600">
-                    First Wednesday of each month
+                    {settings.meetingTime || "First Wednesday of each month"}
                   </p>
-                  <p className="text-gray-600">7:00 PM, School Library</p>
+                  {/* <p className="text-gray-600">7:00 PM, School Library</p> */}
                 </div>
               </div>
             </div>

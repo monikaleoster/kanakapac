@@ -12,6 +12,7 @@ const navLinks = [
   { href: "/policies", label: "Policies" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
+  { href: "/admin", label: "Admin" },
 ];
 
 export default function Navigation() {
@@ -56,11 +57,10 @@ export default function Navigation() {
           <Link
             key={link.href}
             href={link.href}
-            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              pathname === link.href
+            className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${pathname === link.href
                 ? "bg-primary-900 text-white"
                 : "text-primary-100 hover:bg-primary-700 hover:text-white"
-            }`}
+              }`}
           >
             {link.label}
           </Link>
@@ -76,11 +76,10 @@ export default function Navigation() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileOpen(false)}
-                className={`block px-3 py-2 rounded-md text-base font-medium ${
-                  pathname === link.href
+                className={`block px-3 py-2 rounded-md text-base font-medium ${pathname === link.href
                     ? "bg-primary-900 text-white"
                     : "text-primary-100 hover:bg-primary-700 hover:text-white"
-                }`}
+                  }`}
               >
                 {link.label}
               </Link>

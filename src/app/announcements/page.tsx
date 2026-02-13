@@ -1,5 +1,6 @@
 import { getAnnouncements } from "@/lib/data";
 import AnnouncementCard from "@/components/AnnouncementCard";
+import SubscribeForm from "@/components/SubscribeForm";
 
 export const dynamic = "force-dynamic";
 
@@ -19,16 +20,21 @@ export default function AnnouncementsPage() {
       </p>
 
       {announcements.length > 0 ? (
-        <div className="space-y-4">
+        <div className="space-y-4 mb-12">
           {announcements.map((a) => (
             <AnnouncementCard key={a.id} announcement={a} />
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-lg p-8 text-center text-gray-500 shadow-sm">
+        <div className="bg-white rounded-lg p-8 text-center text-gray-500 shadow-sm mb-12">
           No announcements at this time.
         </div>
       )}
+
+      {/* Subscription */}
+      <SubscribeForm />
     </div>
   );
 }
+
+

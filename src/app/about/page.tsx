@@ -1,3 +1,7 @@
+import { getTeamMembers } from "@/lib/data";
+
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "About - Kanaka PAC",
   description:
@@ -5,28 +9,7 @@ export const metadata = {
 };
 
 export default function AboutPage() {
-  const executive = [
-    {
-      role: "Chairperson",
-      name: "Sarah Thompson",
-      bio: "Parent of two Kanaka students. Serving her second year as Chair.",
-    },
-    {
-      role: "Vice-Chairperson",
-      name: "Michael Chen",
-      bio: "New to the executive this year. Active volunteer for school events.",
-    },
-    {
-      role: "Treasurer",
-      name: "Priya Patel",
-      bio: "CPA by profession. Managing PAC finances for the third year.",
-    },
-    {
-      role: "Secretary",
-      name: "Jane Doe",
-      bio: "Responsible for meeting minutes and PAC correspondence.",
-    },
-  ];
+  const executive = getTeamMembers();
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -97,22 +80,31 @@ export default function AboutPage() {
         <h2 className="text-xl font-bold text-gray-900 mb-6">
           Executive Team (2025-2026)
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {executive.map((member) => (
-            <div
-              key={member.role}
-              className="border border-gray-100 rounded-lg p-4"
-            >
-              <p className="text-sm text-primary-600 font-medium">
-                {member.role}
-              </p>
-              <p className="text-lg font-semibold text-gray-900">
-                {member.name}
-              </p>
-              <p className="text-sm text-gray-600 mt-1">{member.bio}</p>
-            </div>
-          ))}
-        </div>
+        {executive.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {executive.map((member) => (
+              <div
+                key={member.id}
+                className="border border-gray-100 rounded-lg p-4"
+              >
+                <p className="text-sm text-primary-600 font-medium">
+                  {member.role}
+                </p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {member.name}
+                </p>
+                <p className="text-sm text-gray-600 mt-1">{member.bio}</p>
+                {member.email && (
+                  <a href={`mailto:${member.email}`} className="text-xs text-gray-400 hover:text-primary-600 mt-2 inline-block">
+                    {member.email}
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-500">Executive team information coming soon.</p>
+        )}
       </section>
 
       {/* How to Get Involved */}

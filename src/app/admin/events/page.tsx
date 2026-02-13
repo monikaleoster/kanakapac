@@ -25,6 +25,7 @@ export default function AdminEventsPage() {
   const [events, setEvents] = useState<EventData[]>([]);
   const [editing, setEditing] = useState<EventData | null>(null);
   const [form, setForm] = useState(emptyEvent);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
@@ -79,14 +80,20 @@ export default function AdminEventsPage() {
     fetchEvents();
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Are you sure you want to delete this event?")) return;
-    await fetch(`/api/events?id=${id}`, { method: "DELETE" });
+  function handleDeleteClick(id: string) {
+    setDeleteId(id);
+  }
+
+  async function handleConfirmDelete() {
+    if (!deleteId) return;
+    await fetch(`/api/events?id=${deleteId}`, { method: "DELETE" });
+    setDeleteId(null);
     fetchEvents();
   }
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      {/* ... (keep existing header) */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <Link
@@ -106,6 +113,30 @@ export default function AdminEventsPage() {
           + New Event
         </button>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Confirm Deletion</h3>
+            <p className="text-gray-600 mb-6">Are you sure you want to delete this event? This action cannot be undone.</p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setDeleteId(null)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-md font-medium hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Form */}
       {showForm && (
@@ -134,6 +165,7 @@ export default function AdminEventsPage() {
                 <input
                   type="date"
                   value={form.date}
+                  // Clean up date value if needed or keep as is
                   onChange={(e) => setForm({ ...form, date: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   required
@@ -223,7 +255,7 @@ export default function AdminEventsPage() {
                 Edit
               </button>
               <button
-                onClick={() => handleDelete(event.id)}
+                onClick={() => handleDeleteClick(event.id)}
                 className="text-red-600 hover:text-red-800 text-sm font-medium px-3 py-1"
               >
                 Delete
