@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import Navigation from "./Navigation";
 import { getSchoolSettings } from "@/lib/data";
 
@@ -11,7 +12,7 @@ export default function Header() {
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center space-x-3">
             {settings.logoUrl ? (
-              <img src={settings.logoUrl} alt="Logo" className="w-10 h-10 rounded-full object-cover bg-white" />
+              <Image src={settings.logoUrl} alt="Logo" width={40} height={40} className="w-10 h-10 rounded-full object-cover bg-white" />
             ) : (
               <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
                 <span className="text-primary-800 font-bold text-lg">P</span>

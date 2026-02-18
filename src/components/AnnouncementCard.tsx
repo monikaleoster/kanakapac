@@ -1,4 +1,4 @@
-import { Announcement } from "@/lib/data";
+import { Announcement } from "@/lib/types";
 import { formatDateTime } from "@/lib/format";
 
 export default function AnnouncementCard({
@@ -10,11 +10,10 @@ export default function AnnouncementCard({
 
   return (
     <div
-      className={`rounded-lg shadow-md border p-6 ${
-        isUrgent
+      className={`rounded-lg shadow-md border p-6 ${isUrgent
           ? "bg-red-50 border-red-200"
           : "bg-white border-gray-100"
-      }`}
+        }`}
     >
       <div className="flex items-start">
         {isUrgent && (
@@ -24,9 +23,8 @@ export default function AnnouncementCard({
         )}
         <div className="flex-1">
           <h3
-            className={`text-lg font-semibold ${
-              isUrgent ? "text-red-900" : "text-gray-900"
-            }`}
+            className={`text-lg font-semibold ${isUrgent ? "text-red-900" : "text-gray-900"
+              }`}
           >
             {announcement.title}
           </h3>
