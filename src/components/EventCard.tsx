@@ -1,4 +1,4 @@
-import { Event } from "@/lib/data";
+import { Event } from "@/lib/types";
 import { formatDate, formatTime } from "@/lib/format";
 
 export default function EventCard({ event }: { event: Event }) {

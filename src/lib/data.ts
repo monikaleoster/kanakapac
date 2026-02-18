@@ -200,6 +200,13 @@ export function saveSubscriber(subscriber: Subscriber): void {
   }
 }
 
+export function deleteSubscriber(email: string): void {
+  const all = readJsonFile<Subscriber>("subscribers.json").filter(
+    (s) => s.email !== email
+  );
+  writeJsonFile("subscribers.json", all);
+}
+
 // School Settings
 export function getSchoolSettings(): SchoolSettings {
   noStore();

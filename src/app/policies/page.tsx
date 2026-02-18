@@ -50,7 +50,6 @@ export default function PoliciesPage() {
 
         {/* Constitution & Bylaws */}
         <section className="bg-white rounded-lg shadow-md p-8">
-// ... existing static content ...
           <h2 className="text-xl font-bold text-gray-900 mb-4">
             Constitution &amp; Bylaws
           </h2>

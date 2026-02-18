@@ -51,7 +51,7 @@ export default async function MinutesDetailPage({
 
         <div
           className="prose prose-gray max-w-none"
-          dangerouslySetInnerHTML={{ __html: renderMarkdown(minutes.content) }}
+          dangerouslySetInnerHTML={{ __html: renderMarkdown(minutes.content || "") }}
         />
       </article>
     </div>

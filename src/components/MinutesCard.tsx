@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Minutes } from "@/lib/data";
+import { Minutes } from "@/lib/types";
 import { formatDate } from "@/lib/format";
 
 export default function MinutesCard({ minutes }: { minutes: Minutes }) {
