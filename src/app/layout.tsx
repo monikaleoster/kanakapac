@@ -3,6 +3,7 @@ import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AuthProvider from "@/components/AuthProvider";
+import FloatingPromo from "@/components/FloatingPromo";
 
 export const metadata: Metadata = {
   title: "Kanaka PAC - Parent Advisory Council",
@@ -22,6 +23,7 @@ export default function RootLayout({
           <Header />
           <main className="flex-1">{children}</main>
           <Footer />
+          <FloatingPromo />
         </AuthProvider>
       </body>
     </html>
