@@ -5,9 +5,9 @@ import AnnouncementCard from "@/components/AnnouncementCard";
 
 export const dynamic = "force-dynamic";
 
-export default function HomePage() {
-  const upcomingEvents = getUpcomingEvents().slice(0, 3);
-  const announcements = getActiveAnnouncements().slice(0, 3);
+export default async function HomePage() {
+  const upcomingEvents = (await getUpcomingEvents()).slice(0, 3);
+  const announcements = (await getActiveAnnouncements()).slice(0, 3);
   const urgentAnnouncements = announcements.filter(
     (a) => a.priority === "urgent"
   );

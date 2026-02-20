@@ -8,8 +8,8 @@ export const metadata = {
   description: "Archive of PAC meeting minutes from Kanaka Elementary.",
 };
 
-export default function MinutesPage() {
-  const minutes = getMinutes();
+export default async function MinutesPage() {
+  const minutes = await getMinutes();
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

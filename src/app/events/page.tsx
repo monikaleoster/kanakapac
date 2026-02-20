@@ -9,9 +9,9 @@ export const metadata = {
   description: "Upcoming and past PAC events at Kanaka Elementary.",
 };
 
-export default function EventsPage() {
-  const upcoming = getUpcomingEvents();
-  const past = getPastEvents();
+export default async function EventsPage() {
+  const upcoming = await getUpcomingEvents();
+  const past = await getPastEvents();
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

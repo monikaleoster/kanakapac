@@ -4,7 +4,7 @@ import { isAuthenticated } from "@/lib/auth";
 
 // Public: Get settings
 export async function GET() {
-    const settings = getSchoolSettings();
+    const settings = await getSchoolSettings();
     return NextResponse.json(settings);
 }
 
@@ -17,6 +17,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     // Basic validation if needed
 
-    saveSchoolSettings(body);
+    await saveSchoolSettings(body);
     return NextResponse.json({ success: true, settings: body });
 }

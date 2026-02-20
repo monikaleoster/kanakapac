@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { getSchoolSettings } from "@/lib/data";
 
-export default function Footer() {
-  const settings = getSchoolSettings();
+export default async function Footer() {
+  const settings = await getSchoolSettings();
 
   return (
     <footer className="bg-gray-800 text-gray-300">

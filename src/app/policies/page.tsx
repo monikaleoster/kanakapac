@@ -8,8 +8,8 @@ export const metadata = {
     "Bylaws, policies, and governance documents of the Kanaka Parent Advisory Council.",
 };
 
-export default function PoliciesPage() {
-  const policies = getPolicies();
+export default async function PoliciesPage() {
+  const policies = await getPolicies();
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

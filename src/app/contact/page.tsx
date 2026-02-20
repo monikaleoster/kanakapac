@@ -7,8 +7,8 @@ export const metadata = {
   description: "Get in touch with the Kanaka Parent Advisory Council.",
 };
 
-export default function ContactPage() {
-  const settings = getSchoolSettings();
+export default async function ContactPage() {
+  const settings = await getSchoolSettings();
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
