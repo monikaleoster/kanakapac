@@ -4,7 +4,7 @@ import { isAuthenticated } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
 
 export async function GET() {
-    const policies = getPolicies();
+    const policies = await getPolicies();
     return NextResponse.json(policies);
 }
 
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
         updatedAt: new Date().toISOString(),
     };
 
-    savePolicy(policy);
+    await savePolicy(policy);
     return NextResponse.json(policy, { status: 201 });
 }
 
@@ -43,7 +43,7 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { id, title, description, fileUrl } = body;
 
-    const existing = getPolicyById(id);
+    const existing = await getPolicyById(id);
     if (!existing) {
         return NextResponse.json({ error: "Policy not found" }, { status: 404 });
     }
@@ -56,7 +56,7 @@ export async function PUT(request: NextRequest) {
         updatedAt: new Date().toISOString(),
     };
 
-    savePolicy(updatedPolicy);
+    await savePolicy(updatedPolicy);
     return NextResponse.json(updatedPolicy);
 }
 
@@ -71,6 +71,6 @@ export async function DELETE(request: NextRequest) {
         return NextResponse.json({ error: "ID required" }, { status: 400 });
     }
 
-    deletePolicy(id);
+    await deletePolicy(id);
     return NextResponse.json({ success: true });
 }

@@ -9,8 +9,8 @@ export const metadata = {
   description: "Latest announcements from the Kanaka Parent Advisory Council.",
 };
 
-export default function AnnouncementsPage() {
-  const announcements = getAnnouncements();
+export default async function AnnouncementsPage() {
+  const announcements = await getAnnouncements();
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

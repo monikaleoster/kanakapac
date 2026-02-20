@@ -8,8 +8,8 @@ export const metadata = {
     "Learn about the Kanaka Parent Advisory Council, our mission, and our executive team.",
 };
 
-export default function AboutPage() {
-  const executive = getTeamMembers();
+export default async function AboutPage() {
+  const executive = await getTeamMembers();
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

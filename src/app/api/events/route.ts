@@ -4,7 +4,7 @@ import { isAuthenticated } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
 
 export async function GET() {
-  const events = getEvents();
+  const events = await getEvents();
   return NextResponse.json(events);
 }
 
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     createdAt: body.createdAt || new Date().toISOString(),
   };
 
-  saveEvent(event);
+  await saveEvent(event);
   return NextResponse.json(event, { status: 201 });
 }
 
@@ -34,7 +34,7 @@ export async function PUT(request: NextRequest) {
   }
 
   const body = await request.json();
-  saveEvent(body);
+  await saveEvent(body);
   return NextResponse.json(body);
 }
 
@@ -49,6 +49,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "ID required" }, { status: 400 });
   }
 
-  deleteEvent(id);
+  await deleteEvent(id);
   return NextResponse.json({ success: true });
 }

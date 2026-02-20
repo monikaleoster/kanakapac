@@ -8,7 +8,7 @@ export async function GET() {
     if (!(await isAuthenticated())) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const subscribers = getSubscribers();
+    const subscribers = await getSubscribers();
     return NextResponse.json(subscribers);
 }
 
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
         subscribedAt: new Date().toISOString(),
     };
 
-    saveSubscriber(subscriber);
+    await saveSubscriber(subscriber);
     return NextResponse.json({ success: true, message: "Subscribed successfully" });
 }
 
@@ -47,6 +47,6 @@ export async function DELETE(request: NextRequest) {
         return NextResponse.json({ error: "Email required" }, { status: 400 });
     }
 
-    deleteSubscriber(email);
+    await deleteSubscriber(email);
     return NextResponse.json({ success: true });
 }

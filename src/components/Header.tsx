@@ -3,8 +3,8 @@ import Image from "next/image";
 import Navigation from "./Navigation";
 import { getSchoolSettings } from "@/lib/data";
 
-export default function Header() {
-  const settings = getSchoolSettings();
+export default async function Header() {
+  const settings = await getSchoolSettings();
 
   return (
     <header className="bg-primary-800 text-white shadow-lg">

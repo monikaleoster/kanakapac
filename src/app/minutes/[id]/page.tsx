@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 export async function generateStaticParams() {
-  const minutes = getMinutes();
+  const minutes = await getMinutes();
   return minutes.map((m) => ({ id: m.id }));
 }
 
@@ -26,7 +26,7 @@ export default async function MinutesDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const minutes = getMinutesById(id);
+  const minutes = await getMinutesById(id);
 
   if (!minutes) {
     notFound();

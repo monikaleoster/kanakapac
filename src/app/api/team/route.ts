@@ -4,7 +4,7 @@ import { isAuthenticated } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
 
 export async function GET() {
-    const members = getTeamMembers();
+    const members = await getTeamMembers();
     return NextResponse.json(members);
 }
 
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
         order: order || 0,
     };
 
-    saveTeamMember(member);
+    await saveTeamMember(member);
     return NextResponse.json(member, { status: 201 });
 }
 
@@ -44,7 +44,7 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { id, name, role, bio, email, order } = body;
 
-    const existing = getTeamMemberById(id);
+    const existing = await getTeamMemberById(id);
     if (!existing) {
         return NextResponse.json({ error: "Member not found" }, { status: 404 });
     }
@@ -58,7 +58,7 @@ export async function PUT(request: NextRequest) {
         order: order !== undefined ? order : existing.order,
     };
 
-    saveTeamMember(updatedMember);
+    await saveTeamMember(updatedMember);
     return NextResponse.json(updatedMember);
 }
 
@@ -73,6 +73,6 @@ export async function DELETE(request: NextRequest) {
         return NextResponse.json({ error: "ID required" }, { status: 400 });
     }
 
-    deleteTeamMember(id);
+    await deleteTeamMember(id);
     return NextResponse.json({ success: true });
 }
