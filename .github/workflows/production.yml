@@ -13,6 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install PostgreSQL client
+        run: sudo apt-get install -y postgresql-client
+
       - name: Apply schema migrations to production DB
         run: |
           psql ${{ secrets.PROD_DATABASE_URL }} -f supabase/schema.sql
