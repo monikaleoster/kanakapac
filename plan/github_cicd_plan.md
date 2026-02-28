@@ -16,41 +16,40 @@ Developer Push / PR
 │  - Lint           │
 │  - Type Check     │
 │  - Build          │
-│  - DB Migration   │
 └────────┬──────────┘
          │
     ┌────┴─────┐
     │          │
     ▼          ▼
  PR Branch   main branch
- Preview     Production
- Deploy      Deploy
- (Staging    (Prod DB)
-  DB)
+ (lint+build  Production
+  only, no    Deploy
+  DB needed)  (Prod DB)
 ```
 
 ---
 
 ## 1. Environment & Database Strategy
 
-Three isolated environments, each with its own Supabase project:
+Two databases, each with its own Supabase project:
 
-| Environment | Branch        | Supabase Project    | Vercel Environment |
-|-------------|---------------|---------------------|--------------------|
-| **CI**      | all PRs       | `kanakapac-ci`      | N/A (build only)   |
-| **Staging** | `main` merge  | `kanakapac-staging` | Preview            |
-| **Production** | release tag | `kanakapac-prod`  | Production         |
+| Environment | Branch        | Supabase Project  | Vercel Environment |
+|-------------|---------------|-------------------|--------------------|
+| **CI**      | PRs + `main`  | `kanakapac-ci`    | Preview            |
+| **Production** | release tag | `kanakapac-prod` | Production         |
 
-**Why separate databases?**
-- CI runs migrations and seeds test data — must never touch production data.
-- Staging lets you verify migrations work before running them on prod.
-- Production is only updated after staging passes.
+**Why two databases?**
+- CI database is shared between PR checks and Vercel preview deployments — no separate staging project needed.
+- Production is only updated after a tagged release with human approval.
 
-### Supabase Projects to Create
+**CI (PRs) build uses no database** — the build step uses placeholder env vars since Next.js
+pages are server-rendered at request time, not at build time. The CI database is only used
+by the preview deploy (on merge to `main`) to run migrations.
 
-1. **`kanakapac-ci`** — ephemeral test data; reset on each CI run via `seed.sql`.
-2. **`kanakapac-staging`** — mirrors production schema; used for preview deployments.
-3. **`kanakapac-prod`** — live production data; only updated via tagged release.
+### Supabase Projects
+
+1. **`kanakapac-ci`** — used for Vercel preview deployments; already exists.
+2. **`kanakapac-prod`** — live production data; only updated via tagged release.
 
 ---
 
@@ -61,8 +60,9 @@ Three isolated environments, each with its own Supabase project:
 | Secret | Where | Reason |
 |--------|-------|--------|
 | Vercel deployment tokens | GitHub Secrets only | Actions-specific, app never needs them |
-| CI database credentials | GitHub Secrets only | Throwaway CI DB, Vercel should never know about it |
-| Staging/Prod `DATABASE_URL` | GitHub Secrets only | Needed by `psql` migration commands in workflows |
+| `CI_DATABASE_URL` | GitHub Secrets only | Used by `psql` migration command in preview deploy workflow |
+| `PROD_DATABASE_URL` | GitHub Secrets only | Used by `psql` migration command in production deploy workflow |
+| `CI_SUPABASE_URL`, `CI_SUPABASE_SERVICE_ROLE_KEY` | GitHub Secrets only | Available if CI build needs real Supabase connection |
 | All other runtime secrets | Vercel Environment Variables only | Read at request time by the running Next.js app |
 
 The `vercel pull` command (run before `vercel build`) downloads the Vercel env vars into the build context, so runtime secrets never need to be duplicated into GitHub.
@@ -75,20 +75,17 @@ Add these in **GitHub → Settings → Secrets and variables → Actions**:
 
 ```
 # Vercel deployment
-VERCEL_TOKEN      = <vercel-api-token>
-VERCEL_ORG_ID     = <org-id>
-VERCEL_PROJECT_ID = <project-id>
+VERCEL_TOKEN      = <VERCEL_TOKEN>
+VERCEL_ORG_ID     = <VERCEL_ORG_ID>
+VERCEL_PROJECT_ID = <VERCEL_PROJECT_ID>
 
-# CI database (kanakapac-ci) — build, test, seed
-CI_SUPABASE_URL              = https://xxxx.supabase.co
-CI_SUPABASE_SERVICE_ROLE_KEY = eyJ...
-CI_DATABASE_URL              = postgresql://postgres:[password]@db.xxxx.supabase.co:5432/postgres
-
-# Staging DB URL — used only by psql migration command, not at runtime
-STAGING_DATABASE_URL = postgresql://postgres:[password]@db.yyyy.supabase.co:5432/postgres
+# CI/Preview DB (kanakapac-ci Supabase project)
+CI_DATABASE_URL              = <CI_DATABASE_URL>         # used by psql migration in preview deploy
+CI_SUPABASE_URL              = <CI_SUPABASE_URL>
+CI_SUPABASE_SERVICE_ROLE_KEY = <CI_SUPABASE_SERVICE_ROLE_KEY>
 
 # Production DB URL — used only by psql migration command, not at runtime
-PROD_DATABASE_URL = postgresql://postgres:[password]@db.zzzz.supabase.co:6543/postgres
+PROD_DATABASE_URL = <PROD_DATABASE_URL>
 ```
 
 ---
@@ -98,16 +95,16 @@ PROD_DATABASE_URL = postgresql://postgres:[password]@db.zzzz.supabase.co:6543/po
 Configure in **Vercel → Project → Settings → Environment Variables**, scoped per environment:
 
 ```
-# Preview environment (staging — kanakapac-staging Supabase project)
-NEXT_PUBLIC_SUPABASE_URL  = https://yyyy.supabase.co
-SUPABASE_SERVICE_ROLE_KEY = eyJ...  (staging key)
-DATABASE_URL              = postgresql://...staging...
+# Preview environment (CI — kanakapac-ci Supabase project)
+NEXT_PUBLIC_SUPABASE_URL  = <CI_SUPABASE_URL>
+SUPABASE_SERVICE_ROLE_KEY = <CI_SUPABASE_SERVICE_ROLE_KEY>
+DATABASE_URL              = <CI_DATABASE_URL>
 NEXTAUTH_SECRET           = <random-32-bytes>
-NEXTAUTH_URL              = https://kanakapac-staging.vercel.app
-ADMIN_PASSWORD            = <staging-password>
+NEXTAUTH_URL              = https://kanakapac-git-main.vercel.app
+ADMIN_PASSWORD            = <preview-password>
 
 # Production environment (kanakapac-prod Supabase project)
-NEXT_PUBLIC_SUPABASE_URL  = https://zzzz.supabase.co
+NEXT_PUBLIC_SUPABASE_URL  = <NEXT_PUBLIC_SUPABASE_URL>
 SUPABASE_SERVICE_ROLE_KEY = eyJ...  (production key)
 DATABASE_URL              = postgresql://...prod...
 NEXTAUTH_SECRET           = <random-32-bytes>
@@ -123,10 +120,10 @@ ADMIN_PASSWORD            = <strong-production-password>
 feature/* ──► PR ──► main ──► tag vX.Y.Z ──► production
                  │                │
                  │                └── staging deploy (automatic)
-                 └── CI checks + preview build (automatic)
+                 └── CI checks (lint + build only)
 ```
 
-- **Feature branches** → open a PR → triggers CI workflow.
+- **Feature branches** → open a PR → triggers CI workflow (lint, type check, build — no DB).
 - **Merge to `main`** → triggers staging deploy workflow.
 - **Push a version tag** (`v1.0.0`) → triggers production deploy workflow.
 
@@ -136,7 +133,8 @@ feature/* ──► PR ──► main ──► tag vX.Y.Z ──► production
 
 ### 4.1 CI Workflow — `.github/workflows/ci.yml`
 
-Triggers on every PR and push to `main`. Runs lint, type check, and build against the CI Supabase project.
+Triggers on every PR and push to `main`. Runs lint, type check, and build using placeholder
+env vars — no database connection required.
 
 ```yaml
 name: CI
@@ -173,9 +171,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint-and-typecheck
     env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.CI_SUPABASE_URL }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.CI_SUPABASE_SERVICE_ROLE_KEY }}
-      DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+      # Placeholder values — build does not query the DB at build time
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: placeholder-key
+      DATABASE_URL: postgresql://postgres:placeholder@localhost:5432/postgres
       NEXTAUTH_SECRET: ci-secret-not-used-in-production
       NEXTAUTH_URL: http://localhost:3000
       ADMIN_PASSWORD: ci-test-password
@@ -190,14 +189,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Apply DB schema to CI database
-        run: npx supabase db push --db-url ${{ secrets.CI_DATABASE_URL }}
-        # Alternative if not using Supabase CLI migrations:
-        # run: psql ${{ secrets.CI_DATABASE_URL }} -f supabase/schema.sql
-
-      - name: Seed CI database
-        run: psql ${{ secrets.CI_DATABASE_URL }} -f supabase/seed.sql
-
       - name: Build Next.js app
         run: npm run build
 
@@ -209,9 +200,9 @@ jobs:
           retention-days: 1
 ```
 
-### 4.2 Staging Deploy — `.github/workflows/staging.yml`
+### 4.2 Preview Deploy — `.github/workflows/staging.yml`
 
-Triggers when a PR merges to `main`. Deploys to Vercel preview environment using the staging Supabase project.
+Triggers when a PR merges to `main`. Runs DB migration on the CI database, then deploys to Vercel preview.
 
 ```yaml
 name: Deploy to Staging
@@ -227,11 +218,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Apply schema migrations to staging DB
+      - name: Apply schema migrations to CI/preview DB
         run: |
-          psql ${{ secrets.STAGING_DATABASE_URL }} -f supabase/schema.sql
+          psql ${{ secrets.CI_DATABASE_URL }} -f supabase/schema.sql
         # For incremental migrations (future), use:
-        # npx supabase db push --db-url ${{ secrets.STAGING_DATABASE_URL }}
+        # npx supabase db push --db-url ${{ secrets.CI_DATABASE_URL }}
 
   deploy-staging:
     name: Deploy to Vercel Staging
@@ -333,37 +324,6 @@ jobs:
         run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
 ```
 
-### 4.4 Database Reset Workflow — `.github/workflows/reset-ci-db.yml`
-
-Optional manual trigger to wipe and re-seed the CI database when test data gets stale.
-
-```yaml
-name: Reset CI Database
-
-on:
-  workflow_dispatch:   # manual trigger only
-
-jobs:
-  reset:
-    name: Drop and recreate CI database schema
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Drop all tables
-        run: |
-          psql ${{ secrets.CI_DATABASE_URL }} -c "
-            DROP TABLE IF EXISTS events, minutes, announcements,
-              policies, team_members, subscribers, settings CASCADE;
-          "
-
-      - name: Apply fresh schema
-        run: psql ${{ secrets.CI_DATABASE_URL }} -f supabase/schema.sql
-
-      - name: Seed test data
-        run: psql ${{ secrets.CI_DATABASE_URL }} -f supabase/seed.sql
-```
-
 ---
 
 ## 5. GitHub Environment Protection Rules
@@ -415,21 +375,21 @@ supabase/
     └── 003_add_subscribers_table.sql
 ```
 
-CI applies migrations in order; once a migration is merged, it is never edited — only new migrations are added.
+Migrations run in order; once merged, a migration is never edited — only new migrations are added.
 
 ---
 
 ## 8. Rollout Sequence
 
-1. **Create three Supabase projects** — CI, Staging, Production.
-2. **Run `schema.sql` + `seed.sql`** in the CI and Staging projects via Supabase SQL editor.
+1. **Two Supabase projects already exist** — CI (`kanakapac-ci`) and Production.
+2. **Run `schema.sql`** in the CI project via Supabase SQL editor (one-time manual step if tables don't exist yet).
 3. **Add Vercel Environment Variables** for Preview and Production environments (Section 2b).
-4. **Add GitHub Secrets** — Vercel tokens, CI DB credentials, and DB URLs for migrations (Section 2a).
+4. **Add GitHub Secrets** — Vercel tokens, CI DB credentials, and Prod DB URL (Section 2a).
 5. **Configure GitHub Environments** (Section 5) with protection rules.
-6. **Create the four workflow files** under `.github/workflows/`.
+6. **Create the three workflow files** under `.github/workflows/`.
 7. **Enable branch protection** on `main` (Section 6).
 8. **Update `schema.sql`** to use `IF NOT EXISTS` (Section 7).
-9. **Test the pipeline** by opening a draft PR and watching the CI workflow run.
+9. **Test the pipeline** by opening a draft PR and watching the CI workflow run (lint + build only).
 10. **Merge to `main`** and verify the staging deploy workflow triggers.
 11. **Tag a release** (`git tag v1.0.0 && git push --tags`) and approve the production deploy.
 
@@ -438,8 +398,7 @@ CI applies migrations in order; once a migration is merged, it is never edited �
 ## 9. Quick Reference
 
 ```
-Open PR        → CI runs lint + build against kanakapac-ci DB
-Merge to main  → Staging DB migrated → Vercel preview deployed
+Open PR        → CI runs lint + build (no DB, placeholder env vars)
+Merge to main  → CI DB migrated → Vercel preview deployed
 Push tag v*    → (Human approval) → Prod DB migrated → Vercel prod deployed
-Manual trigger → CI DB wiped and re-seeded with fresh test data
 ```
