@@ -11,11 +11,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Apply schema migrations to staging DB
+      - name: Apply schema migrations to CI/preview DB
         run: |
-          psql ${{ secrets.STAGING_DATABASE_URL }} -f supabase/schema.sql
+          psql ${{ secrets.CI_DATABASE_URL }} -f supabase/schema.sql
         # For incremental migrations (future), use:
-        # npx supabase db push --db-url ${{ secrets.STAGING_DATABASE_URL }}
+        # npx supabase db push --db-url ${{ secrets.CI_DATABASE_URL }}
 
   deploy-staging:
     name: Deploy to Vercel Staging

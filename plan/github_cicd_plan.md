@@ -31,24 +31,24 @@ Developer Push / PR
 
 ## 1. Environment & Database Strategy
 
-Two isolated environments, each with its own Supabase project:
+Two databases, each with its own Supabase project:
 
-| Environment | Branch        | Supabase Project    | Vercel Environment |
-|-------------|---------------|---------------------|--------------------|
-| **Staging** | `main` merge  | `kanakapac-staging` | Preview            |
-| **Production** | release tag | `kanakapac-prod`  | Production         |
+| Environment | Branch        | Supabase Project  | Vercel Environment |
+|-------------|---------------|-------------------|--------------------|
+| **CI**      | PRs + `main`  | `kanakapac-ci`    | Preview            |
+| **Production** | release tag | `kanakapac-prod` | Production         |
 
 **Why two databases?**
-- Staging lets you verify migrations and preview the app before touching production.
-- Production is only updated after staging passes.
+- CI database is shared between PR checks and Vercel preview deployments — no separate staging project needed.
+- Production is only updated after a tagged release with human approval.
 
-**CI (PRs) uses no database** — the build step uses placeholder env vars since Next.js
-pages are server-rendered at request time, not at build time. No DB connection is needed
-to produce a successful build artifact.
+**CI (PRs) build uses no database** — the build step uses placeholder env vars since Next.js
+pages are server-rendered at request time, not at build time. The CI database is only used
+by the preview deploy (on merge to `main`) to run migrations.
 
-### Supabase Projects to Create
+### Supabase Projects
 
-1. **`kanakapac-staging`** — mirrors production schema; used for preview deployments.
+1. **`kanakapac-ci`** — used for Vercel preview deployments; already exists.
 2. **`kanakapac-prod`** — live production data; only updated via tagged release.
 
 ---
@@ -60,7 +60,9 @@ to produce a successful build artifact.
 | Secret | Where | Reason |
 |--------|-------|--------|
 | Vercel deployment tokens | GitHub Secrets only | Actions-specific, app never needs them |
-| Staging/Prod `DATABASE_URL` | GitHub Secrets only | Needed by `psql` migration commands in workflows |
+| `CI_DATABASE_URL` | GitHub Secrets only | Used by `psql` migration command in preview deploy workflow |
+| `PROD_DATABASE_URL` | GitHub Secrets only | Used by `psql` migration command in production deploy workflow |
+| `CI_SUPABASE_URL`, `CI_SUPABASE_SERVICE_ROLE_KEY` | GitHub Secrets only | Available if CI build needs real Supabase connection |
 | All other runtime secrets | Vercel Environment Variables only | Read at request time by the running Next.js app |
 
 The `vercel pull` command (run before `vercel build`) downloads the Vercel env vars into the build context, so runtime secrets never need to be duplicated into GitHub.
@@ -77,8 +79,10 @@ VERCEL_TOKEN      = <VERCEL_TOKEN>
 VERCEL_ORG_ID     = <VERCEL_ORG_ID>
 VERCEL_PROJECT_ID = <VERCEL_PROJECT_ID>
 
-# Staging DB URL — used only by psql migration command, not at runtime
-STAGING_DATABASE_URL = <STAGING_DATABASE_URL>
+# CI/Preview DB (kanakapac-ci Supabase project)
+CI_DATABASE_URL              = <CI_DATABASE_URL>         # used by psql migration in preview deploy
+CI_SUPABASE_URL              = <CI_SUPABASE_URL>
+CI_SUPABASE_SERVICE_ROLE_KEY = <CI_SUPABASE_SERVICE_ROLE_KEY>
 
 # Production DB URL — used only by psql migration command, not at runtime
 PROD_DATABASE_URL = <PROD_DATABASE_URL>
@@ -91,13 +95,13 @@ PROD_DATABASE_URL = <PROD_DATABASE_URL>
 Configure in **Vercel → Project → Settings → Environment Variables**, scoped per environment:
 
 ```
-# Preview environment (staging — kanakapac-staging Supabase project)
-NEXT_PUBLIC_SUPABASE_URL  = <NEXT_PUBLIC_SUPABASE_URL>
-   = eyJ...  (staging key)
-DATABASE_URL              = postgresql://...staging...
+# Preview environment (CI — kanakapac-ci Supabase project)
+NEXT_PUBLIC_SUPABASE_URL  = <CI_SUPABASE_URL>
+SUPABASE_SERVICE_ROLE_KEY = <CI_SUPABASE_SERVICE_ROLE_KEY>
+DATABASE_URL              = <CI_DATABASE_URL>
 NEXTAUTH_SECRET           = <random-32-bytes>
-NEXTAUTH_URL              = https://kanakapac-staging.vercel.app
-ADMIN_PASSWORD            = <staging-password>
+NEXTAUTH_URL              = https://kanakapac-git-main.vercel.app
+ADMIN_PASSWORD            = <preview-password>
 
 # Production environment (kanakapac-prod Supabase project)
 NEXT_PUBLIC_SUPABASE_URL  = <NEXT_PUBLIC_SUPABASE_URL>
@@ -196,9 +200,9 @@ jobs:
           retention-days: 1
 ```
 
-### 4.2 Staging Deploy — `.github/workflows/staging.yml`
+### 4.2 Preview Deploy — `.github/workflows/staging.yml`
 
-Triggers when a PR merges to `main`. Runs DB migration on staging, then deploys to Vercel preview.
+Triggers when a PR merges to `main`. Runs DB migration on the CI database, then deploys to Vercel preview.
 
 ```yaml
 name: Deploy to Staging
@@ -214,11 +218,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Apply schema migrations to staging DB
+      - name: Apply schema migrations to CI/preview DB
         run: |
-          psql ${{ secrets.STAGING_DATABASE_URL }} -f supabase/schema.sql
+          psql ${{ secrets.CI_DATABASE_URL }} -f supabase/schema.sql
         # For incremental migrations (future), use:
-        # npx supabase db push --db-url ${{ secrets.STAGING_DATABASE_URL }}
+        # npx supabase db push --db-url ${{ secrets.CI_DATABASE_URL }}
 
   deploy-staging:
     name: Deploy to Vercel Staging
@@ -377,10 +381,10 @@ Migrations run in order; once merged, a migration is never edited — only new m
 
 ## 8. Rollout Sequence
 
-1. **Create two Supabase projects** — Staging and Production.
-2. **Run `schema.sql`** in the Staging project via Supabase SQL editor.
+1. **Two Supabase projects already exist** — CI (`kanakapac-ci`) and Production.
+2. **Run `schema.sql`** in the CI project via Supabase SQL editor (one-time manual step if tables don't exist yet).
 3. **Add Vercel Environment Variables** for Preview and Production environments (Section 2b).
-4. **Add GitHub Secrets** — Vercel tokens and DB URLs for migrations (Section 2a).
+4. **Add GitHub Secrets** — Vercel tokens, CI DB credentials, and Prod DB URL (Section 2a).
 5. **Configure GitHub Environments** (Section 5) with protection rules.
 6. **Create the three workflow files** under `.github/workflows/`.
 7. **Enable branch protection** on `main` (Section 6).
@@ -395,6 +399,6 @@ Migrations run in order; once merged, a migration is never edited — only new m
 
 ```
 Open PR        → CI runs lint + build (no DB, placeholder env vars)
-Merge to main  → Staging DB migrated → Vercel preview deployed
+Merge to main  → CI DB migrated → Vercel preview deployed
 Push tag v*    → (Human approval) → Prod DB migrated → Vercel prod deployed
 ```
