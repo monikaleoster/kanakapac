@@ -30,5 +30,5 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
   },
-  secret: "kanaka-pac-secret-key-change-me",
+  secret: process.env.NEXTAUTH_SECRET,
 };
