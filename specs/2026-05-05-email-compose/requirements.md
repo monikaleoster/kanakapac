@@ -2,10 +2,11 @@
 
 ## Scope
 
-This feature closes the two open items in Phase 3:
+This feature closes the three open items in Phase 3:
 
-1. **Admin compose UI** — a subject + body form on the admin subscribers page that calls `POST /api/send-email`.
-2. **Welcome email** — a branded email sent automatically when a new subscriber signs up via `POST /api/subscribe`.
+1. **Minimal home page** — the homepage shows the real PAC/school name from settings and includes the `SubscribeForm` component so visitors can subscribe without navigating away.
+2. **Admin compose UI** — a subject + body form on the admin subscribers page that calls `POST /api/send-email`.
+3. **Welcome email** — a branded email sent automatically when a new subscriber signs up via `POST /api/subscribe`.
 
 Everything else in the email system (Resend SDK, unsubscribe flow, subscriber CRUD) is already implemented and is out of scope for this work.
 
@@ -29,6 +30,8 @@ Only an authenticated admin session can call `POST /api/send-email`. The route a
 
 ## Constraints
 
+- The homepage hero title and tagline must use `settings.pacName` and `settings.schoolName` from `getSchoolSettings()` — do not hardcode school or PAC names anywhere in the page.
+- The `SubscribeForm` on the homepage is the same component used on other public pages (`src/components/SubscribeForm`) — do not create a second implementation.
 - The welcome email send must be **non-blocking**: if Resend fails to deliver the welcome email, `POST /api/subscribe` still returns `{ success: true }`. Log the error server-side; do not surface it to the subscriber.
 - The compose form must **disable the send button** while the request is in flight to prevent duplicate sends.
 - The `pacName` in email templates comes from `getSchoolSettings()` (Supabase `settings` table) — do not hardcode it.
@@ -41,6 +44,8 @@ Only an authenticated admin session can call `POST /api/send-email`. The route a
 Relevant files:
 | File | Role |
 |---|---|
+| `src/app/page.tsx` | Homepage — needs dynamic settings + SubscribeForm added |
+| `src/components/SubscribeForm.tsx` | Existing subscribe component — import, do not duplicate |
 | `src/lib/resend.ts` | Email client, templates, unsubscribe URL helper |
 | `src/app/api/send-email/route.ts` | Blast endpoint — already functional, needs no API changes |
 | `src/app/api/subscribe/route.ts` | Subscribe endpoint — needs welcome email call added |

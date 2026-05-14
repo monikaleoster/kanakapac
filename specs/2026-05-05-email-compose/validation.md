@@ -14,9 +14,18 @@ This feature is ready to merge when every item below is checked off by an admin 
 
 ## Checklist
 
+### Home page
+
+- [ ] Visit `/` — hero title shows the PAC name from settings (not hardcoded "Kanaka PAC")
+- [ ] Hero tagline shows the school name from settings (not hardcoded "Kanaka Elementary")
+- [ ] A "Stay Updated" section with the subscribe form is visible below the announcements
+- [ ] Submit the subscribe form with an invalid email → inline error shown, no request sent
+- [ ] With no events in the database, the events section shows the empty-state fallback text
+- [ ] With no announcements in the database, the announcements section shows the empty-state fallback text
+
 ### Welcome email
 
-- [ ] Go to any public page with a subscribe form
+- [ ] Go to the homepage subscribe form
 - [ ] Enter a real email address and submit
 - [ ] Response shows success (no error message shown)
 - [ ] Check the inbox — welcome email is received within ~60 seconds

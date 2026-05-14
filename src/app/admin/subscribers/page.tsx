@@ -9,10 +9,21 @@ interface Subscriber {
     subscribedAt: string;
 }
 
+interface SendResult {
+    sentCount: number;
+    totalSubscribers: number;
+    errors?: string[];
+}
+
 export default function AdminSubscribersPage() {
     const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
     const [loading, setLoading] = useState(true);
     const [deleteId, setDeleteId] = useState<string | null>(null);
+
+    const [showEmailModal, setShowEmailModal] = useState(false);
+    const [emailForm, setEmailForm] = useState({ subject: "", content: "", type: "announcement" });
+    const [sending, setSending] = useState(false);
+    const [sendResult, setSendResult] = useState<SendResult | null>(null);
 
     useEffect(() => {
         fetchSubscribers();
@@ -46,12 +57,38 @@ export default function AdminSubscribersPage() {
         alert("All emails copied to clipboard!");
     }
 
-    async function handleSendUpdate() {
-        // Simple alert is fine for this simulation as it's not a destructive action on data
-        if (!confirm("Send an update notification to all subscribers? (Simulation)")) return;
+    function openEmailModal() {
+        setSendResult(null);
+        setEmailForm({ subject: "", content: "", type: "announcement" });
+        setShowEmailModal(true);
+    }
 
-        // Simulation of sending emails
-        alert(`Simulated: Update sent to ${subscribers.length} subscribers!`);
+    async function handleSendEmail(e: React.FormEvent) {
+        e.preventDefault();
+        setSending(true);
+        setSendResult(null);
+        try {
+            const res = await fetch("/api/send-email", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    type: emailForm.type,
+                    subject: emailForm.subject,
+                    title: emailForm.subject,
+                    content: emailForm.content,
+                }),
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setSendResult(data);
+            } else {
+                alert(data.error || "Failed to send emails.");
+            }
+        } catch {
+            alert("An error occurred while sending emails.");
+        } finally {
+            setSending(false);
+        }
     }
 
     return (
@@ -80,7 +117,7 @@ export default function AdminSubscribersPage() {
                         Copy All Emails
                     </button>
                     <button
-                        onClick={handleSendUpdate}
+                        onClick={openEmailModal}
                         className="bg-primary-600 text-white px-4 py-2 rounded-md font-medium hover:bg-primary-700 transition-colors"
                         disabled={subscribers.length === 0}
                     >
@@ -93,7 +130,6 @@ export default function AdminSubscribersPage() {
                 <p>Loading...</p>
             ) : (
                 <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-
                     {subscribers.length > 0 ? (
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
@@ -150,6 +186,93 @@ export default function AdminSubscribersPage() {
                                 Remove
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Email Compose Modal */}
+            {showEmailModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-auto shadow-xl">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">Send Email to Subscribers</h3>
+
+                        {sendResult ? (
+                            <div className="text-center py-4">
+                                <p className="text-green-700 font-medium text-lg mb-1">
+                                    Sent to {sendResult.sentCount} / {sendResult.totalSubscribers} subscribers
+                                </p>
+                                {sendResult.errors && sendResult.errors.length > 0 && (
+                                    <div className="mt-3 text-left bg-red-50 border border-red-200 rounded p-3">
+                                        <p className="text-red-700 text-sm font-medium mb-1">Failed to send to:</p>
+                                        <ul className="text-red-600 text-sm list-disc list-inside">
+                                            {sendResult.errors.map(e => <li key={e}>{e}</li>)}
+                                        </ul>
+                                    </div>
+                                )}
+                                <button
+                                    onClick={() => setShowEmailModal(false)}
+                                    className="mt-6 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
+                                >
+                                    Done
+                                </button>
+                            </div>
+                        ) : (
+                            <form onSubmit={handleSendEmail} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                                    <select
+                                        value={emailForm.type}
+                                        onChange={(e) => setEmailForm({ ...emailForm, type: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                    >
+                                        <option value="announcement">Announcement</option>
+                                        <option value="custom">Custom</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                                    <input
+                                        type="text"
+                                        value={emailForm.subject}
+                                        onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                        required
+                                        placeholder="Email subject line"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                                    <textarea
+                                        value={emailForm.content}
+                                        onChange={(e) => setEmailForm({ ...emailForm, content: e.target.value })}
+                                        rows={6}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                        required
+                                        placeholder="Write your message here..."
+                                    />
+                                </div>
+                                <p className="text-xs text-gray-500">
+                                    This will send to all {subscribers.length} subscriber{subscribers.length !== 1 ? "s" : ""}.
+                                </p>
+                                <div className="flex justify-end gap-3 pt-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowEmailModal(false)}
+                                        className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                                        disabled={sending}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors disabled:opacity-50"
+                                        disabled={sending}
+                                    >
+                                        {sending ? "Sending..." : `Send to ${subscribers.length} subscriber${subscribers.length !== 1 ? "s" : ""}`}
+                                    </button>
+                                </div>
+                            </form>
+                        )}
                     </div>
                 </div>
             )}

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { saveSubscriber, getSubscribers, deleteSubscriber } from "@/lib/data";
+import { saveSubscriber, getSubscribers, deleteSubscriber, getSchoolSettings } from "@/lib/data";
 import { isAuthenticated } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
+import { sendEmail, generateUnsubscribeUrl, buildWelcomeEmailHtml } from "@/lib/resend";
 
 // Admin: Get all subscribers
 export async function GET() {
@@ -31,6 +32,17 @@ export async function POST(request: NextRequest) {
     };
 
     await saveSubscriber(subscriber);
+
+    // Send welcome email — non-blocking
+    try {
+        const settings = await getSchoolSettings();
+        const unsubscribeUrl = generateUnsubscribeUrl(email);
+        const html = buildWelcomeEmailHtml(unsubscribeUrl, settings.pacName);
+        await sendEmail({ to: email, subject: `Welcome to ${settings.pacName}!`, html });
+    } catch (err) {
+        console.error("Failed to send welcome email:", err);
+    }
+
     return NextResponse.json({ success: true, message: "Subscribed successfully" });
 }
 

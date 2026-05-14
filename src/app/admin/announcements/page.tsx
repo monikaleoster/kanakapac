@@ -82,6 +82,22 @@ export default function AdminAnnouncementsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+
+      const shouldNotify = confirm(
+        "Announcement saved! Would you like to email this to all subscribers?"
+      );
+      if (shouldNotify) {
+        await fetch("/api/send-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "announcement",
+            subject: `New Announcement: ${payload.title}`,
+            title: payload.title,
+            content: payload.content,
+          }),
+        });
+      }
     }
 
     setShowForm(false);

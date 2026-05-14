@@ -6,4 +6,4 @@ export default withAuth({
     },
 });
 
-export const config = { matcher: ["/admin/dashboard/:path*", "/admin/events/:path*", "/admin/minutes/:path*", "/admin/announcements/:path*"] };
+export const config = { matcher: ["/admin/dashboard/:path*", "/admin/events/:path*", "/admin/minutes/:path*", "/admin/announcements/:path*", "/admin/subscribers/:path*"] };
