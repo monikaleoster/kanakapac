@@ -1,16 +1,18 @@
 import Link from "next/link";
-import { getUpcomingEvents, getActiveAnnouncements } from "@/lib/data";
+import { getUpcomingEvents, getActiveAnnouncements, getSchoolSettings } from "@/lib/data";
 import EventCard from "@/components/EventCard";
 import AnnouncementCard from "@/components/AnnouncementCard";
+import SubscribeForm from "@/components/SubscribeForm";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const upcomingEvents = (await getUpcomingEvents()).slice(0, 3);
-  const announcements = (await getActiveAnnouncements()).slice(0, 3);
-  const urgentAnnouncements = announcements.filter(
-    (a) => a.priority === "urgent"
-  );
+  const [upcomingEvents, announcements, settings] = await Promise.all([
+    getUpcomingEvents().then((e) => e.slice(0, 3)),
+    getActiveAnnouncements().then((a) => a.slice(0, 3)),
+    getSchoolSettings(),
+  ]);
+  const urgentAnnouncements = announcements.filter((a) => a.priority === "urgent");
 
   return (
     <div>
@@ -19,11 +21,11 @@ export default async function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Welcome to Kanaka PAC
+              Welcome to {settings.pacName}
             </h1>
             <p className="text-xl text-primary-100 mb-8 max-w-2xl mx-auto">
               Empowering parents to support and enhance the educational
-              experience for every student at Kanaka Elementary.
+              experience for every student at {settings.schoolName}.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
@@ -150,7 +152,7 @@ export default async function HomePage() {
         </section>
 
         {/* Recent Announcements */}
-        <section>
+        <section className="mb-16">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900">
               Recent Announcements
@@ -177,6 +179,9 @@ export default async function HomePage() {
             </p>
           )}
         </section>
+
+        {/* Subscribe */}
+        <SubscribeForm />
       </div>
     </div>
   );

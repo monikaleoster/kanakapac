@@ -71,6 +71,9 @@ export default function SubscribeForm() {
             {status === "error" && (
                 <p className="text-red-500 text-sm mt-2">{message}</p>
             )}
+            <p className="text-xs text-gray-500 mt-2">
+                You can unsubscribe at any time via the link in our emails.
+            </p>
         </div>
     );
 }
