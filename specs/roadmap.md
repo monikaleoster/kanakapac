@@ -46,7 +46,6 @@ Phases are ordered by user value delivered. Each phase should be shippable on it
 - [ ] Confirmation email on subscribe (welcome message)
 
 ---
-
 ## Phase 4 — Production launch
 
 **Goal:** The site is live at a real domain and email works end-to-end with a verified sender.
