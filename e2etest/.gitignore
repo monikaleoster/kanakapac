@@ -1,0 +1,13 @@
+# dependencies
+node_modules/
+
+# playwright generated output
+playwright-report/
+test-results/
+playwright/
+
+# auth state (contains live session tokens — never commit)
+tests/.auth/
+
+# screenshot artifacts
+verify.png
