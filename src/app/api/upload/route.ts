@@ -10,15 +10,16 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
         }
 
-        const validTypes = [
-            "application/pdf",
-            "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            "text/plain",
-            "image/png",
-            "image/jpeg",
-            "image/jpg",
-        ];
+        const url = new URL(request.url);
+        const context = url.searchParams.get("context") ?? "document";
+        const validTypes = context === "image"
+            ? ["image/png", "image/jpeg", "image/jpg"]
+            : [
+                "application/pdf",
+                "application/msword",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "text/plain",
+              ];
 
         if (!validTypes.includes(file.type)) {
             return NextResponse.json(

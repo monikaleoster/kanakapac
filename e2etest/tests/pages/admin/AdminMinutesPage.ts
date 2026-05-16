@@ -18,13 +18,14 @@ export class AdminMinutesPage {
     this.dateInput = page.getByLabel(/date/i);
     this.contentInput = page.getByLabel(/content/i);
     this.fileInput = page.locator('input[type="file"]');
-    this.submitBtn = page.getByRole('button', { name: /save|submit|create/i }).last();
-    this.confirmDeleteBtn = page.getByRole('button', { name: /confirm|yes|delete/i }).last();
-    this.cancelDeleteBtn = page.getByRole('button', { name: /cancel|no/i });
+    this.submitBtn = page.getByRole('button', { name: /post|update|save|submit|create/i }).last();
+    this.confirmDeleteBtn = page.getByTestId('confirm-delete-btn');
+    this.cancelDeleteBtn = page.getByTestId('cancel-delete-btn');
   }
 
   async goto() {
     await this.page.goto('/admin/minutes');
+    await this.page.waitForLoadState('networkidle');
   }
 
   getEditBtns() {
@@ -36,7 +37,7 @@ export class AdminMinutesPage {
   }
 
   getMinutesListItems() {
-    return this.page.locator('li, tr, article').filter({
+    return this.page.locator('li, tr, article, div').filter({
       has: this.page.getByRole('button', { name: /edit/i }),
     });
   }

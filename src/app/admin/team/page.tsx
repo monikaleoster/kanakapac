@@ -25,6 +25,7 @@ export default function AdminTeamPage() {
     const [editing, setEditing] = useState<TeamMember | null>(null);
     const [form, setForm] = useState(emptyMember);
     const [showForm, setShowForm] = useState(false);
+    const [deleteId, setDeleteId] = useState<string | null>(null);
 
     useEffect(() => {
         fetchMembers();
@@ -80,9 +81,14 @@ export default function AdminTeamPage() {
         fetchMembers();
     }
 
-    async function handleDelete(id: string) {
-        if (!confirm("Are you sure you want to delete this team member?")) return;
-        await fetch(`/api/team?id=${id}`, { method: "DELETE" });
+    function handleDelete(id: string) {
+        setDeleteId(id);
+    }
+
+    async function handleConfirmDelete() {
+        if (!deleteId) return;
+        await fetch(`/api/team?id=${deleteId}`, { method: "DELETE" });
+        setDeleteId(null);
         fetchMembers();
     }
 
@@ -101,8 +107,8 @@ export default function AdminTeamPage() {
             setMembers(newMembers);
 
             // server update (ideally batch, but one by one for now)
-            await fetch("/api/team", { method: "PUT", body: JSON.stringify(newMembers[index]) });
-            await fetch("/api/team", { method: "PUT", body: JSON.stringify(newMembers[index - 1]) });
+            await fetch("/api/team", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(newMembers[index]) });
+            await fetch("/api/team", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(newMembers[index - 1]) });
         } else if (direction === 'down' && index < members.length - 1) {
             const temp = newMembers[index].order;
             newMembers[index].order = newMembers[index + 1].order;
@@ -112,8 +118,8 @@ export default function AdminTeamPage() {
             newMembers.sort((a, b) => a.order - b.order);
             setMembers(newMembers);
 
-            await fetch("/api/team", { method: "PUT", body: JSON.stringify(newMembers[index]) });
-            await fetch("/api/team", { method: "PUT", body: JSON.stringify(newMembers[index + 1]) });
+            await fetch("/api/team", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(newMembers[index]) });
+            await fetch("/api/team", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(newMembers[index + 1]) });
         }
         fetchMembers();
     }
@@ -140,6 +146,32 @@ export default function AdminTeamPage() {
                 </button>
             </div>
 
+            {/* Delete Confirmation Modal */}
+            {deleteId && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
+                        <h3 className="text-lg font-bold text-gray-900 mb-2">Confirm Deletion</h3>
+                        <p className="text-gray-600 mb-6">Are you sure you want to delete this team member? This action cannot be undone.</p>
+                        <div className="flex justify-end gap-3">
+                            <button
+                                data-testid="cancel-delete-btn"
+                                onClick={() => setDeleteId(null)}
+                                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md font-medium transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                data-testid="confirm-delete-btn"
+                                onClick={handleConfirmDelete}
+                                className="px-4 py-2 bg-red-600 text-white rounded-md font-medium hover:bg-red-700 transition-colors"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Form */}
             {showForm && (
                 <div className="bg-white rounded-lg shadow-md p-6 mb-8">
@@ -149,10 +181,11 @@ export default function AdminTeamPage() {
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label htmlFor="team-name" className="block text-sm font-medium text-gray-700 mb-1">
                                     Name
                                 </label>
                                 <input
+                                    id="team-name"
                                     type="text"
                                     value={form.name}
                                     onChange={(e) =>
@@ -164,10 +197,11 @@ export default function AdminTeamPage() {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label htmlFor="team-role" className="block text-sm font-medium text-gray-700 mb-1">
                                     Role
                                 </label>
                                 <input
+                                    id="team-role"
                                     type="text"
                                     value={form.role}
                                     onChange={(e) =>
@@ -181,10 +215,11 @@ export default function AdminTeamPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="team-bio" className="block text-sm font-medium text-gray-700 mb-1">
                                 Bio
                             </label>
                             <textarea
+                                id="team-bio"
                                 value={form.bio}
                                 onChange={(e) =>
                                     setForm({ ...form, bio: e.target.value })
@@ -198,10 +233,11 @@ export default function AdminTeamPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label htmlFor="team-email" className="block text-sm font-medium text-gray-700 mb-1">
                                     Email (Optional)
                                 </label>
                                 <input
+                                    id="team-email"
                                     type="email"
                                     value={form.email}
                                     onChange={(e) =>
@@ -212,10 +248,11 @@ export default function AdminTeamPage() {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                <label htmlFor="team-order" className="block text-sm font-medium text-gray-700 mb-1">
                                     Display Order
                                 </label>
                                 <input
+                                    id="team-order"
                                     type="number"
                                     value={form.order}
                                     onChange={(e) =>

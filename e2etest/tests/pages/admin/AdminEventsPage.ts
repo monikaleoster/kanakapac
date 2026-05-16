@@ -21,14 +21,15 @@ export class AdminEventsPage {
     this.timeInput = page.getByLabel(/time/i);
     this.locationInput = page.getByLabel(/location/i);
     this.descriptionInput = page.getByLabel(/description/i);
-    this.submitBtn = page.getByRole('button', { name: /save|submit|create|add/i }).last();
+    this.submitBtn = page.getByRole('button', { name: /save|submit|create|add|update/i }).last();
     this.deleteModal = page.locator('[role="dialog"], [class*="modal"]').first();
-    this.confirmDeleteBtn = page.getByRole('button', { name: /confirm|yes|delete/i }).last();
-    this.cancelDeleteBtn = page.getByRole('button', { name: /cancel|no/i });
+    this.confirmDeleteBtn = page.getByTestId('confirm-delete-btn');
+    this.cancelDeleteBtn = page.getByTestId('cancel-delete-btn');
   }
 
   async goto() {
     await this.page.goto('/admin/events');
+    await this.page.waitForLoadState('networkidle');
   }
 
   getEditBtns() {

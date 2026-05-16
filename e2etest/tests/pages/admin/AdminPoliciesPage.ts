@@ -16,7 +16,7 @@ export class AdminPoliciesPage {
     this.titleInput = page.getByLabel(/title/i);
     this.descriptionInput = page.getByLabel(/description/i);
     this.fileInput = page.locator('input[type="file"]');
-    this.submitBtn = page.getByRole('button', { name: /save|submit|create/i }).last();
+    this.submitBtn = page.getByRole('button', { name: /upload policy|update policy/i });
     this.confirmDeleteBtn = page.getByRole('button', { name: /confirm|yes|delete/i }).last();
     this.cancelDeleteBtn = page.getByRole('button', { name: /cancel|no/i });
   }
