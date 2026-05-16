@@ -22,7 +22,7 @@ test.describe('WF-ADM-06: Minutes — Create', () => {
     await minutesPage.fillMinutesForm(TEST_MINUTES);
     await minutesPage.submitBtn.click();
 
-    await expect(page.getByText(TEST_MINUTES.title)).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText(TEST_MINUTES.title).first()).toBeVisible({ timeout: 8000 });
   });
 
   test('edge case — invalid file type rejected by upload API', async ({ page }) => {
@@ -32,7 +32,7 @@ test.describe('WF-ADM-06: Minutes — Create', () => {
     await minutesPage.newMinutesBtn.click();
 
     // Intercept the upload endpoint to simulate rejection
-    await page.route('/api/upload', (route) =>
+    await page.route(/\/api\/upload/, (route) =>
       route.fulfill({ status: 400, body: JSON.stringify({ error: 'Invalid file type' }) })
     );
 
@@ -47,7 +47,7 @@ test.describe('WF-ADM-06: Minutes — Create', () => {
     });
 
     // Upload error should be visible
-    const errorVisible = await page.getByText(/invalid|error|failed/i).isVisible({ timeout: 5000 }).catch(() => false);
+    const errorVisible = await page.getByText(/invalid|error|failed/i).first().waitFor({ state: 'visible', timeout: 5000 }).then(() => true).catch(() => false);
     expect(errorVisible).toBeTruthy();
   });
 
@@ -59,7 +59,7 @@ test.describe('WF-ADM-06: Minutes — Create', () => {
     await minutesPage.fillMinutesForm({ ...TEST_MINUTES, title: 'No File Minutes' });
     await minutesPage.submitBtn.click();
 
-    await expect(page.getByText('No File Minutes')).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText('No File Minutes').first()).toBeVisible({ timeout: 8000 });
   });
 });
 
@@ -81,7 +81,7 @@ test.describe('WF-ADM-07: Minutes — Edit', () => {
     await minutesPage.titleInput.fill(updatedTitle);
     await minutesPage.submitBtn.click();
 
-    await expect(page.getByText(updatedTitle)).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText(updatedTitle).first()).toBeVisible({ timeout: 8000 });
   });
 
   test('edge case — re-upload sets new fileUrl (old file orphaned)', async ({ page }) => {
@@ -95,7 +95,7 @@ test.describe('WF-ADM-07: Minutes — Edit', () => {
     await editBtns.first().click();
 
     // Intercept upload to return a mock new URL
-    await page.route('/api/upload', (route) =>
+    await page.route(/\/api\/upload/, (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -123,19 +123,21 @@ test.describe('WF-ADM-08: Minutes — Delete', () => {
     const minutesPage = new AdminMinutesPage(page);
     await minutesPage.goto();
 
+    const toDelete = `Minutes To Delete ${Date.now()}`;
+
     // Create a minutes record to delete
     await minutesPage.newMinutesBtn.click();
-    await minutesPage.fillMinutesForm({ ...TEST_MINUTES, title: 'Minutes To Delete' });
+    await minutesPage.fillMinutesForm({ ...TEST_MINUTES, title: toDelete });
     await minutesPage.submitBtn.click();
-    await expect(page.getByText('Minutes To Delete')).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText(toDelete).first()).toBeVisible({ timeout: 8000 });
 
-    const targetRow = page.locator('li, tr, article').filter({ hasText: 'Minutes To Delete' });
+    const targetRow = page.locator('div').filter({ has: page.getByRole('heading', { name: toDelete }) }).filter({ has: page.getByRole('button', { name: /delete/i }) }).last();
     await targetRow.getByRole('button', { name: /delete/i }).click();
 
     await expect(minutesPage.confirmDeleteBtn).toBeVisible();
     await minutesPage.confirmDeleteBtn.click();
 
-    await expect(page.getByText('Minutes To Delete')).not.toBeVisible({ timeout: 8000 });
+    await expect(page.getByText(toDelete)).not.toBeVisible({ timeout: 8000 });
   });
 
   test('edge case — cancel delete keeps record in list', async ({ page }) => {

@@ -122,12 +122,14 @@ export default function AdminEventsPage() {
             <p className="text-gray-600 mb-6">Are you sure you want to delete this event? This action cannot be undone.</p>
             <div className="flex justify-end gap-3">
               <button
+                data-testid="cancel-delete-btn"
                 onClick={() => setDeleteId(null)}
                 className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md font-medium transition-colors"
               >
                 Cancel
               </button>
               <button
+                data-testid="confirm-delete-btn"
                 onClick={handleConfirmDelete}
                 className="px-4 py-2 bg-red-600 text-white rounded-md font-medium hover:bg-red-700 transition-colors"
               >
@@ -146,10 +148,11 @@ export default function AdminEventsPage() {
           </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="event-title" className="block text-sm font-medium text-gray-700 mb-1">
                 Title
               </label>
               <input
+                id="event-title"
                 type="text"
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -159,23 +162,24 @@ export default function AdminEventsPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="event-date" className="block text-sm font-medium text-gray-700 mb-1">
                   Date
                 </label>
                 <input
+                  id="event-date"
                   type="date"
                   value={form.date}
-                  // Clean up date value if needed or keep as is
                   onChange={(e) => setForm({ ...form, date: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="event-time" className="block text-sm font-medium text-gray-700 mb-1">
                   Time
                 </label>
                 <input
+                  id="event-time"
                   type="time"
                   value={form.time}
                   onChange={(e) => setForm({ ...form, time: e.target.value })}
@@ -184,10 +188,11 @@ export default function AdminEventsPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="event-location" className="block text-sm font-medium text-gray-700 mb-1">
                   Location
                 </label>
                 <input
+                  id="event-location"
                   type="text"
                   value={form.location}
                   onChange={(e) =>
@@ -199,10 +204,11 @@ export default function AdminEventsPage() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="event-description" className="block text-sm font-medium text-gray-700 mb-1">
                 Description
               </label>
               <textarea
+                id="event-description"
                 value={form.description}
                 onChange={(e) =>
                   setForm({ ...form, description: e.target.value })

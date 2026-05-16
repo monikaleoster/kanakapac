@@ -20,13 +20,14 @@ export class AdminTeamPage {
     this.bioInput = page.getByLabel(/bio/i);
     this.emailInput = page.getByLabel(/email/i);
     this.orderInput = page.getByLabel(/order|display order/i);
-    this.submitBtn = page.getByRole('button', { name: /save|submit|add/i }).last();
-    this.confirmDeleteBtn = page.getByRole('button', { name: /confirm|yes|delete/i }).last();
-    this.cancelDeleteBtn = page.getByRole('button', { name: /cancel|no/i });
+    this.submitBtn = page.getByRole('button', { name: /save|submit|add|update/i }).last();
+    this.confirmDeleteBtn = page.getByTestId('confirm-delete-btn');
+    this.cancelDeleteBtn = page.getByTestId('cancel-delete-btn');
   }
 
   async goto() {
     await this.page.goto('/admin/team');
+    await this.page.waitForLoadState('networkidle');
   }
 
   getEditBtns() {
@@ -38,17 +39,15 @@ export class AdminTeamPage {
   }
 
   getMoveUpBtns() {
-    return this.page.getByRole('button', { name: /↑|move up|up/i });
+    return this.page.getByRole('button', { name: /[▲↑]|move up/i });
   }
 
   getMoveDownBtns() {
-    return this.page.getByRole('button', { name: /↓|move down|down/i });
+    return this.page.getByRole('button', { name: /[▼↓]|move down/i });
   }
 
   getTeamMemberItems() {
-    return this.page.locator('li, tr, article').filter({
-      has: this.page.getByRole('button', { name: /edit/i }),
-    });
+    return this.page.locator('div.space-y-3 > div');
   }
 
   async fillMemberForm(data: { name: string; role: string; bio: string; email?: string; order?: string }) {

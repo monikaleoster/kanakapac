@@ -37,14 +37,14 @@ export default function AdminSettingsPage() {
             if (file) {
                 const formData = new FormData();
                 formData.append("file", file);
-                const uploadRes = await fetch("/api/upload", {
+                const uploadRes = await fetch("/api/upload?context=image", {
                     method: "POST",
                     body: formData,
                 });
 
                 if (uploadRes.ok) {
                     const data = await uploadRes.json();
-                    logoUrl = data.url;
+                    logoUrl = data.fileUrl;
                 } else {
                     throw new Error("Logo upload failed");
                 }
@@ -97,10 +97,11 @@ export default function AdminSettingsPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="settings-school-name" className="block text-sm font-medium text-gray-700 mb-1">
                                 School Name
                             </label>
                             <input
+                                id="settings-school-name"
                                 type="text"
                                 value={settings.schoolName}
                                 onChange={(e) => setSettings({ ...settings, schoolName: e.target.value })}
@@ -108,10 +109,11 @@ export default function AdminSettingsPage() {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="settings-pac-name" className="block text-sm font-medium text-gray-700 mb-1">
                                 PAC Name
                             </label>
                             <input
+                                id="settings-pac-name"
                                 type="text"
                                 value={settings.pacName}
                                 onChange={(e) => setSettings({ ...settings, pacName: e.target.value })}
@@ -119,10 +121,11 @@ export default function AdminSettingsPage() {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="settings-email" className="block text-sm font-medium text-gray-700 mb-1">
                                 Email Address
                             </label>
                             <input
+                                id="settings-email"
                                 type="email"
                                 value={settings.email}
                                 onChange={(e) => setSettings({ ...settings, email: e.target.value })}
@@ -130,10 +133,11 @@ export default function AdminSettingsPage() {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="settings-logo" className="block text-sm font-medium text-gray-700 mb-1">
                                 School Logo
                             </label>
                             <input
+                                id="settings-logo"
                                 type="file"
                                 accept="image/*"
                                 onChange={(e) => setFile(e.target.files?.[0] || null)}
@@ -152,10 +156,11 @@ export default function AdminSettingsPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="settings-address" className="block text-sm font-medium text-gray-700 mb-1">
                                 Address
                             </label>
                             <input
+                                id="settings-address"
                                 type="text"
                                 value={settings.address}
                                 onChange={(e) => setSettings({ ...settings, address: e.target.value })}
@@ -163,10 +168,11 @@ export default function AdminSettingsPage() {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="settings-city" className="block text-sm font-medium text-gray-700 mb-1">
                                 City, Province
                             </label>
                             <input
+                                id="settings-city"
                                 type="text"
                                 value={settings.city}
                                 onChange={(e) => setSettings({ ...settings, city: e.target.value })}
@@ -176,10 +182,11 @@ export default function AdminSettingsPage() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label htmlFor="settings-meeting-time" className="block text-sm font-medium text-gray-700 mb-1">
                             Meeting Time
                         </label>
                         <input
+                            id="settings-meeting-time"
                             type="text"
                             value={settings.meetingTime || ""}
                             onChange={(e) => setSettings({ ...settings, meetingTime: e.target.value })}

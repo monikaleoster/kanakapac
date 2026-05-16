@@ -14,7 +14,7 @@ test.describe('WF-ADM-12: Policies — Create', () => {
     await policiesPage.newPolicyBtn.click();
 
     // Mock upload API to return a fake URL
-    await page.route('/api/upload', (route) =>
+    await page.route(/\/api\/upload/, (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -60,7 +60,7 @@ test.describe('WF-ADM-12: Policies — Create', () => {
 
     await policiesPage.newPolicyBtn.click();
 
-    await page.route('/api/upload', (route) =>
+    await page.route(/\/api\/upload/, (route) =>
       route.fulfill({ status: 400, body: JSON.stringify({ error: 'Invalid file type' }) })
     );
 
@@ -94,7 +94,7 @@ test.describe('WF-ADM-12: Policies — Create', () => {
     await policiesPage.titleInput.fill('Incomplete Policy');
 
     // File upload mocked to succeed so button is enabled
-    await page.route('/api/upload', (route) =>
+    await page.route(/\/api\/upload/, (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',

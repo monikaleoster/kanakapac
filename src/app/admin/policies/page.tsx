@@ -22,6 +22,7 @@ export default function AdminPoliciesPage() {
     const [editing, setEditing] = useState<PolicyData | null>(null);
     const [form, setForm] = useState(emptyPolicy);
     const [showForm, setShowForm] = useState(false);
+    const [uploadError, setUploadError] = useState("");
 
     useEffect(() => {
         fetchPolicies();
@@ -41,12 +42,14 @@ export default function AdminPoliciesPage() {
             description: item.description,
             fileUrl: item.fileUrl,
         });
+        setUploadError("");
         setShowForm(true);
     }
 
     function handleNew() {
         setEditing(null);
         setForm(emptyPolicy);
+        setUploadError("");
         setShowForm(true);
     }
 
@@ -58,7 +61,7 @@ export default function AdminPoliciesPage() {
         formData.append("file", file);
 
         try {
-            const res = await fetch("/api/upload", {
+            const res = await fetch("/api/upload?context=document", {
                 method: "POST",
                 body: formData,
             });
@@ -66,10 +69,11 @@ export default function AdminPoliciesPage() {
             if (!res.ok) throw new Error("Upload failed");
 
             const data = await res.json();
+            setUploadError("");
             setForm((prev) => ({ ...prev, fileUrl: data.fileUrl }));
         } catch (error) {
             console.error("Upload error:", error);
-            alert("File upload failed. Please try again.");
+            setUploadError("File upload failed. Invalid file type.");
         }
     }
 
@@ -93,6 +97,7 @@ export default function AdminPoliciesPage() {
         setShowForm(false);
         setEditing(null);
         setForm(emptyPolicy);
+        setUploadError("");
         fetchPolicies();
     }
 
@@ -132,10 +137,11 @@ export default function AdminPoliciesPage() {
                     </h2>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="policy-title" className="block text-sm font-medium text-gray-700 mb-1">
                                 Title
                             </label>
                             <input
+                                id="policy-title"
                                 type="text"
                                 value={form.title}
                                 onChange={(e) =>
@@ -147,10 +153,11 @@ export default function AdminPoliciesPage() {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="policy-description" className="block text-sm font-medium text-gray-700 mb-1">
                                 Description
                             </label>
                             <textarea
+                                id="policy-description"
                                 value={form.description}
                                 onChange={(e) =>
                                     setForm({ ...form, description: e.target.value })
@@ -162,20 +169,24 @@ export default function AdminPoliciesPage() {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label htmlFor="policy-file" className="block text-sm font-medium text-gray-700 mb-1">
                                 Upload Document (PDF, DOC, DOCX, TXT)
                             </label>
                             <input
+                                id="policy-file"
                                 type="file"
                                 accept=".pdf,.doc,.docx,.txt"
                                 onChange={handleFileChange}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                                required={!form.fileUrl} // Required if no file url (new) or if we cleared it (edit) - actually logic is simple: if empty and not editing, required.
+                                required={!form.fileUrl}
                             />
                             {form.fileUrl && (
                                 <p className="mt-1 text-sm text-green-600">
                                     File uploaded: {form.fileUrl.split("/").pop()}
                                 </p>
+                            )}
+                            {uploadError && (
+                                <p className="mt-1 text-sm text-red-600">{uploadError}</p>
                             )}
                         </div>
 
@@ -192,6 +203,7 @@ export default function AdminPoliciesPage() {
                                 onClick={() => {
                                     setShowForm(false);
                                     setEditing(null);
+                                    setUploadError("");
                                 }}
                                 className="text-gray-600 px-4 py-2 rounded-md hover:bg-gray-100"
                             >

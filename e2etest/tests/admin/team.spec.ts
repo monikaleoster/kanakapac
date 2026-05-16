@@ -23,7 +23,7 @@ test.describe('WF-ADM-15: Team — Create', () => {
     await teamPage.fillMemberForm(TEST_MEMBER);
     await teamPage.submitBtn.click();
 
-    await expect(page.getByText(TEST_MEMBER.name)).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText(TEST_MEMBER.name).first()).toBeVisible({ timeout: 8000 });
   });
 
   test('happy path — new member appears on public About page', async ({ page }) => {
@@ -33,10 +33,10 @@ test.describe('WF-ADM-15: Team — Create', () => {
     await teamPage.addMemberBtn.click();
     await teamPage.fillMemberForm({ ...TEST_MEMBER, name: 'Public Visible Member' });
     await teamPage.submitBtn.click();
-    await expect(page.getByText('Public Visible Member')).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText('Public Visible Member').first()).toBeVisible({ timeout: 8000 });
 
     await page.goto('/about');
-    await expect(page.getByText('Public Visible Member')).toBeVisible();
+    await expect(page.getByText('Public Visible Member').first()).toBeVisible();
   });
 
   test('edge case — empty email saved without email link on About page', async ({ page }) => {
@@ -46,7 +46,7 @@ test.describe('WF-ADM-15: Team — Create', () => {
     await teamPage.addMemberBtn.click();
     await teamPage.fillMemberForm({ ...TEST_MEMBER, name: 'No Email Member', email: '' });
     await teamPage.submitBtn.click();
-    await expect(page.getByText('No Email Member')).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText('No Email Member').first()).toBeVisible({ timeout: 8000 });
 
     await page.goto('/about');
     const memberSection = page.locator('*').filter({ hasText: 'No Email Member' }).last();
@@ -64,7 +64,7 @@ test.describe('WF-ADM-15: Team — Create', () => {
     // Leave order blank
     await teamPage.submitBtn.click();
 
-    await expect(page.getByText('Default Order Member')).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText('Default Order Member').first()).toBeVisible({ timeout: 8000 });
   });
 });
 
@@ -83,7 +83,7 @@ test.describe('WF-ADM-16: Team — Edit', () => {
     await teamPage.nameInput.fill('Updated Member Name');
     await teamPage.submitBtn.click();
 
-    await expect(page.getByText('Updated Member Name')).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText('Updated Member Name').first()).toBeVisible({ timeout: 8000 });
   });
 
   test('edge case — clearing email field removes email link from About page', async ({ page }) => {
@@ -107,20 +107,22 @@ test.describe('WF-ADM-17: Team — Delete', () => {
     const teamPage = new AdminTeamPage(page);
     await teamPage.goto();
 
-    await teamPage.addMemberBtn.click();
-    await teamPage.fillMemberForm({ ...TEST_MEMBER, name: 'Member To Delete' });
-    await teamPage.submitBtn.click();
-    await expect(page.getByText('Member To Delete')).toBeVisible({ timeout: 8000 });
+    const toDelete = `Member To Delete ${Date.now()}`;
 
-    const targetRow = page.locator('li, tr, article').filter({ hasText: 'Member To Delete' });
+    await teamPage.addMemberBtn.click();
+    await teamPage.fillMemberForm({ ...TEST_MEMBER, name: toDelete });
+    await teamPage.submitBtn.click();
+    await expect(page.getByText(toDelete).first()).toBeVisible({ timeout: 8000 });
+
+    const targetRow = page.locator('div').filter({ has: page.getByRole('heading', { name: toDelete }) }).filter({ has: page.getByRole('button', { name: /delete/i }) }).last();
     await targetRow.getByRole('button', { name: /delete/i }).click();
     await expect(teamPage.confirmDeleteBtn).toBeVisible();
     await teamPage.confirmDeleteBtn.click();
 
-    await expect(page.getByText('Member To Delete')).not.toBeVisible({ timeout: 8000 });
+    await expect(page.getByText(toDelete)).not.toBeVisible({ timeout: 8000 });
 
     await page.goto('/about');
-    await expect(page.getByText('Member To Delete')).not.toBeVisible();
+    await expect(page.getByText(toDelete)).not.toBeVisible();
   });
 
   test('edge case — cancel delete keeps member in list', async ({ page }) => {

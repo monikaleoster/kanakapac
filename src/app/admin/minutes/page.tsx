@@ -24,6 +24,8 @@ export default function AdminMinutesPage() {
   const [editing, setEditing] = useState<MinutesData | null>(null);
   const [form, setForm] = useState(emptyMinutes);
   const [showForm, setShowForm] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState("");
 
   useEffect(() => {
     fetchMinutes();
@@ -44,12 +46,14 @@ export default function AdminMinutesPage() {
       content: item.content,
       fileUrl: item.fileUrl || "",
     });
+    setUploadError("");
     setShowForm(true);
   }
 
   function handleNew() {
     setEditing(null);
     setForm(emptyMinutes);
+    setUploadError("");
     setShowForm(true);
   }
 
@@ -61,7 +65,7 @@ export default function AdminMinutesPage() {
     formData.append("file", file);
 
     try {
-      const res = await fetch("/api/upload", {
+      const res = await fetch("/api/upload?context=document", {
         method: "POST",
         body: formData,
       });
@@ -69,10 +73,11 @@ export default function AdminMinutesPage() {
       if (!res.ok) throw new Error("Upload failed");
 
       const data = await res.json();
+      setUploadError("");
       setForm((prev) => ({ ...prev, fileUrl: data.fileUrl }));
     } catch (error) {
       console.error("Upload error:", error);
-      alert("File upload failed. Please try again.");
+      setUploadError("File upload failed. Invalid file type.");
     }
   }
 
@@ -96,12 +101,18 @@ export default function AdminMinutesPage() {
     setShowForm(false);
     setEditing(null);
     setForm(emptyMinutes);
+    setUploadError("");
     fetchMinutes();
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Are you sure you want to delete these minutes?")) return;
-    await fetch(`/api/minutes?id=${id}`, { method: "DELETE" });
+  function handleDelete(id: string) {
+    setDeleteId(id);
+  }
+
+  async function handleConfirmDelete() {
+    if (!deleteId) return;
+    await fetch(`/api/minutes?id=${deleteId}`, { method: "DELETE" });
+    setDeleteId(null);
     fetchMinutes();
   }
 
@@ -127,6 +138,32 @@ export default function AdminMinutesPage() {
         </button>
       </div>
 
+      {/* Delete Confirmation Modal */}
+      {deleteId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Confirm Deletion</h3>
+            <p className="text-gray-600 mb-6">Are you sure you want to delete these minutes? This action cannot be undone.</p>
+            <div className="flex justify-end gap-3">
+              <button
+                data-testid="cancel-delete-btn"
+                onClick={() => setDeleteId(null)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                data-testid="confirm-delete-btn"
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-md font-medium hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Form */}
       {showForm && (
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
@@ -136,10 +173,11 @@ export default function AdminMinutesPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="min-title" className="block text-sm font-medium text-gray-700 mb-1">
                   Title
                 </label>
                 <input
+                  id="min-title"
                   type="text"
                   value={form.title}
                   onChange={(e) =>
@@ -151,10 +189,11 @@ export default function AdminMinutesPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="min-date" className="block text-sm font-medium text-gray-700 mb-1">
                   Meeting Date
                 </label>
                 <input
+                  id="min-date"
                   type="date"
                   value={form.date}
                   onChange={(e) => setForm({ ...form, date: e.target.value })}
@@ -163,10 +202,11 @@ export default function AdminMinutesPage() {
                 />
               </div>
               <div className="col-span-1 md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="min-file" className="block text-sm font-medium text-gray-700 mb-1">
                   Upload Minutes (PDF, DOC, DOCX, TXT)
                 </label>
                 <input
+                  id="min-file"
                   type="file"
                   accept=".pdf,.doc,.docx,.txt"
                   onChange={handleFileChange}
@@ -177,13 +217,17 @@ export default function AdminMinutesPage() {
                     File uploaded: {form.fileUrl.split("/").pop()}
                   </p>
                 )}
+                {uploadError && (
+                  <p className="mt-1 text-sm text-red-600">{uploadError}</p>
+                )}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="min-content" className="block text-sm font-medium text-gray-700 mb-1">
                 Content (Markdown supported)
               </label>
               <textarea
+                id="min-content"
                 value={form.content}
                 onChange={(e) =>
                   setForm({ ...form, content: e.target.value })
@@ -210,6 +254,7 @@ export default function AdminMinutesPage() {
                 onClick={() => {
                   setShowForm(false);
                   setEditing(null);
+                  setUploadError("");
                 }}
                 className="text-gray-600 px-4 py-2 rounded-md hover:bg-gray-100"
               >

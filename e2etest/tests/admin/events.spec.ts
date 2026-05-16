@@ -23,7 +23,7 @@ test.describe('WF-ADM-03: Events — Create', () => {
     await eventsPage.fillEventForm(TEST_EVENT);
     await eventsPage.submitBtn.click();
 
-    await expect(page.getByText(TEST_EVENT.title)).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText(TEST_EVENT.title).first()).toBeVisible({ timeout: 8000 });
   });
 
   test('edge case — required fields enforce HTML5 validation', async ({ page }) => {
@@ -50,7 +50,7 @@ test.describe('WF-ADM-03: Events — Create', () => {
     await eventsPage.fillEventForm({ ...TEST_EVENT, title: 'Past Event Test', date: '2020-01-01' });
     await eventsPage.submitBtn.click();
 
-    await expect(page.getByText('Past Event Test')).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText('Past Event Test').first()).toBeVisible({ timeout: 8000 });
   });
 });
 
@@ -69,7 +69,7 @@ test.describe('WF-ADM-04: Events — Edit', () => {
     await eventsPage.titleInput.fill(updatedTitle);
     await eventsPage.submitBtn.click();
 
-    await expect(page.getByText(updatedTitle)).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText(updatedTitle).first()).toBeVisible({ timeout: 8000 });
   });
 
   test('edge case — clicking edit pre-fills form with existing data', async ({ page }) => {
@@ -110,25 +110,23 @@ test.describe('WF-ADM-05: Events — Delete', () => {
     const eventsPage = new AdminEventsPage(page);
     await eventsPage.goto();
 
+    const toDelete = `Event To Delete ${Date.now()}`;
+
     // Create an event to delete
     await eventsPage.newEventBtn.click();
-    await eventsPage.fillEventForm({ ...TEST_EVENT, title: 'Event To Delete' });
+    await eventsPage.fillEventForm({ ...TEST_EVENT, title: toDelete });
     await eventsPage.submitBtn.click();
-    await expect(page.getByText('Event To Delete')).toBeVisible({ timeout: 8000 });
-
-    const deleteBtns = eventsPage.getDeleteBtns();
-    const count = await deleteBtns.count();
-    if (count === 0) test.skip();
+    await expect(page.getByText(toDelete).first()).toBeVisible({ timeout: 8000 });
 
     // Click delete on the newly created event
-    const targetRow = page.locator('li, tr, article').filter({ hasText: 'Event To Delete' });
+    const targetRow = page.locator('div').filter({ has: page.getByRole('heading', { name: toDelete }) }).filter({ has: page.getByRole('button', { name: /delete/i }) }).last();
     await targetRow.getByRole('button', { name: /delete/i }).click();
 
     // Confirmation modal should appear
     await expect(eventsPage.confirmDeleteBtn).toBeVisible();
     await eventsPage.confirmDeleteBtn.click();
 
-    await expect(page.getByText('Event To Delete')).not.toBeVisible({ timeout: 8000 });
+    await expect(page.getByText(toDelete)).not.toBeVisible({ timeout: 8000 });
   });
 
   test('edge case — cancel in delete modal keeps event in list', async ({ page }) => {

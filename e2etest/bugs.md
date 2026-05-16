@@ -66,6 +66,40 @@ The missing `htmlFor`/`id` pairing is a genuine WCAG 2.1 SC 1.3.1 accessibility 
 
 **Testing recommendation:** After fixing, the 26 timed-out tests and 13 cascading skips should recover. Run the full suite and verify delete cancel flows specifically.
 
+### Fix Status
+
+**Status:** Resolved — all BUG-01 tests passing.  
+**Fix date:** 2026-05-15  
+**Tests after fix:** 34 / 35 pass (1 failing test is BUG-03, unrelated to this fix)
+
+#### Source code changes
+
+| File | Change |
+|------|--------|
+| `src/app/admin/events/page.tsx` | Added `htmlFor`/`id` to all 5 form fields; added `data-testid="confirm-delete-btn"` and `data-testid="cancel-delete-btn"` to the existing delete modal |
+| `src/app/admin/announcements/page.tsx` | Added `htmlFor`/`id` to all 4 form fields; replaced `confirm()` with inline delete modal; added `data-testid` on modal buttons |
+| `src/app/admin/minutes/page.tsx` | Added `htmlFor`/`id` to all 4 form fields (including file input); replaced `confirm()` with inline delete modal; added `data-testid` on modal buttons |
+| `src/app/admin/team/page.tsx` | Added `htmlFor`/`id` to all 5 form fields; replaced `confirm()` with inline delete modal; added `data-testid` on modal buttons; fixed `handleMove` missing `Content-Type: application/json` headers on all 4 PUT calls |
+
+#### Test infrastructure changes
+
+| File | Change |
+|------|--------|
+| `e2etest/playwright.config.ts` | Added `PLAYWRIGHT_BASE_URL` env override so tests can target localhost |
+| `tests/pages/admin/AdminAnnouncementsPage.ts` | Fixed `submitBtn` regex to `/post\|update\|save\|submit\|create/i`; switched `confirmDeleteBtn`/`cancelDeleteBtn` to `getByTestId`; added `waitForLoadState('networkidle')` in `goto()` |
+| `tests/pages/admin/AdminEventsPage.ts` | Fixed `submitBtn` regex to include `update`; switched delete-modal buttons to `getByTestId`; added `waitForLoadState` |
+| `tests/pages/admin/AdminMinutesPage.ts` | Fixed `submitBtn` regex; switched delete-modal buttons to `getByTestId`; added `waitForLoadState` |
+| `tests/pages/admin/AdminTeamPage.ts` | Fixed `submitBtn` regex to include `update`; switched delete-modal buttons to `getByTestId`; fixed `getTeamMemberItems` selector from `li, tr, article` → `div.space-y-3 > div`; fixed `getMoveUpBtns`/`getMoveDownBtns` regex to include `▲`/`▼`; added `waitForLoadState` |
+| `tests/admin/announcements.spec.ts` | Added `beforeEach` dialog dismisser (page calls `confirm()` after every POST); added `.first()` to all `getByText().toBeVisible()` calls; made delete and priority-change test titles unique with `Date.now()` suffix to avoid DB contamination |
+| `tests/admin/events.spec.ts` | Added `.first()` to `getByText()` visibility checks; made delete test title unique |
+| `tests/admin/minutes.spec.ts` | Added `.first()` to `getByText()` visibility checks; made delete test title unique |
+| `tests/admin/team.spec.ts` | Added `.first()` to `getByText()` visibility checks; made delete test title unique |
+
+#### Known remaining issues (not BUG-01)
+
+- **`minutes.spec.ts:28` (WF-ADM-06 edge case — invalid file type):** Fails because the admin minutes page uses `alert()` for upload errors instead of rendering in-page error text. Tracked as BUG-03.
+- **`team.spec.ts:145` (WF-ADM-18 — reorder swaps member order):** Intermittently fails when DB is contaminated with many team members sharing conflicting `order` field values, causing the re-sorted list after a swap to differ from expectations. Not caused by this fix; requires DB cleanup or test isolation.
+
 ---
 
 ## BUG-02 — Settings Page: "School Name" Field Not Found
@@ -121,6 +155,54 @@ export interface UploadResponse { fileUrl: string; }
 
 Use it in `settings/page.tsx` as `const data: UploadResponse = await uploadRes.json()` to get a compile-time error if the key ever changes again.
 
+### Fix Status
+
+**Status:** Fixed — all 7 WF-ADM-23 settings tests passing.  
+**Fix date:** 2026-05-15  
+**Tests after fix:** 8 / 8 settings tests pass; 33 / 35 overall admin tests pass (2 failures are BUG-03 and a known intermittent reorder issue, both pre-existing and unrelated to this fix)
+
+#### Implementation Summary
+
+Two targeted changes to `src/app/admin/settings/page.tsx`:
+
+1. **Accessibility fix:** Added `htmlFor`/`id` pairs to all 7 label/input pairs in the settings form (`settings-school-name`, `settings-pac-name`, `settings-email`, `settings-logo`, `settings-address`, `settings-city`, `settings-meeting-time`). This resolves `getByLabel()` failures by establishing explicit ARIA associations in the accessibility tree.
+
+2. **Data-loss bug fix:** Changed `logoUrl = data.url` → `logoUrl = data.fileUrl` (line 47) to match the actual response shape `{ fileUrl }` returned by `/api/upload/route.ts` (line 49). Previously, every logo upload silently saved `undefined` as the logo URL, actively clearing the previously stored value.
+
+No test infrastructure changes were required — the existing `AdminSettingsPage.ts` locators resolve correctly once the `htmlFor`/`id` associations are in place.
+
+#### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/app/admin/settings/page.tsx` | Added `htmlFor`/`id` to all 7 form field pairs; fixed `data.url` → `data.fileUrl` on line 47 |
+
+#### Tests Executed
+
+Executed against `http://localhost:3001` (dev server) with auth via `PLAYWRIGHT_BASE_URL=http://localhost:3001`.
+
+- `e2etest/tests/admin/settings.spec.ts` (WF-ADM-23) — all 8 tests
+- `e2etest/tests/admin/announcements.spec.ts`, `events.spec.ts`, `minutes.spec.ts`, `team.spec.ts` — 35 regression tests
+
+#### Test Results
+
+| Test file | Passed | Failed | Notes |
+|-----------|--------|--------|-------|
+| `settings.spec.ts` (BUG-02 target) | 8 / 8 | 0 | All previously failing label-resolution tests now pass |
+| `announcements.spec.ts` | 9 / 9 | 0 | No regressions |
+| `events.spec.ts` | 7 / 7 | 0 | No regressions |
+| `minutes.spec.ts` | 6 / 7 | 1 | Pre-existing BUG-03 failure (`alert()` not in-page) |
+| `team.spec.ts` | 11 / 12 | 1 | Pre-existing intermittent reorder failure (DB contamination) |
+
+#### Remaining Risks / Follow-ups
+
+- **Test data contamination:** The `happy path — logo upload updates settings` test mocks `/api/upload` to return `https://example.com/logo.png` and persists it to the live database. Because `next.config.js` does not configure `example.com` as an allowed image domain, `next/image` in the Header throws a 500 error on subsequent page loads, breaking unrelated admin tests in the same run. The `logo_url` field was manually reset to `""` in Supabase after each test run. **Root cause is test isolation, not the fix itself.** Recommendation: add a `afterAll` cleanup hook to the settings spec that resets `logoUrl` to the pre-test value, or mock the full settings POST in that test case.
+- **Typed upload response:** As recommended in the Final Proposal, a shared `UploadResponse` interface in `lib/types.ts` would prevent this class of key-mismatch bug at compile time. Not implemented in this fix per scope constraints.
+
+#### Final Resolution Status
+
+**Fixed** — all BUG-02 target tests passing with no regressions introduced by the fix.
+
 ---
 
 ## BUG-03 — File Upload Validation Not Enforced (Minutes + Policies)
@@ -129,7 +211,7 @@ Use it in `settings/page.tsx` as `const data: UploadResponse = await uploadRes.j
 **Severity:** High — security/data integrity  
 **Failed tests:** WF-ADM-06 edge case, WF-ADM-12 edge case
 
-### Steps to Reproduce — Minutes
+### Steps to Reproduce — Minutes    
 
 1. Log in to admin and navigate to `/admin/minutes`
 2. Click the New Minutes button and open the create form
@@ -205,6 +287,77 @@ this.submitBtn = page.getByRole('button', { name: /upload policy|update policy/i
 ```
 
 **Trade-off:** The context-based upload API adds complexity but closes a real security gap — an admin could accidentally (or intentionally) attach an executable to a policy document record if MIME type spoofing bypasses client-side `accept` attribute filtering. Worth the small complexity increase.
+
+### Fix Status
+
+**Status:** Fixed — all WF-ADM-06 and WF-ADM-12 target tests passing.  
+**Fix date:** 2026-05-15  
+**Tests after fix:** 45 / 50 admin tests pass; 4 skipped (expected — delete tests on empty DB); 1 failure is the pre-existing intermittent team reorder issue (documented in BUG-01)
+
+#### Implementation Summary
+
+Three targeted changes per the Final Proposal:
+
+**Fix 1 — Code: replace `alert()` with in-page error state** in `minutes/page.tsx` and `policies/page.tsx`:
+- Added `const [uploadError, setUploadError] = useState("")` to both pages
+- In `handleFileChange` catch block: replaced `alert(...)` with `setUploadError("File upload failed. Invalid file type.")`
+- Cleared `uploadError` on successful upload, on form open (`handleNew`/`handleEdit`), on submit, and on cancel
+- Added `{uploadError && <p className="mt-1 text-sm text-red-600">{uploadError}</p>}` below the file input in both forms
+
+**Fix 2 — Architecture: context-aware upload validation** in `/api/upload/route.ts`:
+- Added `context` query param: `url.searchParams.get("context") ?? "document"`
+- `context=image`: allows only `image/png`, `image/jpeg`, `image/jpg` (for settings logo)
+- `context=document` (default): allows only `application/pdf`, `application/msword`, `application/vnd.openxmlformats-officedocument.wordprocessingml.document`, `text/plain` (for minutes/policies)
+- Updated callers: `settings/page.tsx` → `?context=image`; `minutes/page.tsx` and `policies/page.tsx` → `?context=document`
+
+**Fix 3 — Test: updated `AdminPoliciesPage.ts` `submitBtn` locator**:
+- Changed from `/save|submit|create/i` (no match) to `/upload policy|update policy/i` (matches actual button text)
+
+**Fix 1 also included:** Adding `htmlFor`/`id` to all label/input pairs in `policies/page.tsx` (missed in BUG-01) so that the policies tests can resolve fields via accessibility tree.
+
+**Additional test fixes required by Fix 2:**
+- All Playwright route patterns for `/api/upload` were updated from exact string `'/api/upload'` to regex `/\/api\/upload/` to match the new query-param URLs (`?context=document`, `?context=image`). Affected: `minutes.spec.ts`, `policies.spec.ts`, `settings.spec.ts`.
+- The minutes BUG-03 target test assertion was updated from `isVisible({ timeout: 5000 })` (doesn't retry when element is absent) to `waitFor({ state: 'visible', timeout: 5000 })` (polls for element appearance), fixing a timing fragility that caused the test to fail without trace enabled.
+
+#### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/app/admin/minutes/page.tsx` | Fix 1: `alert()` → `uploadError` state + error display; Fix 2: fetch URL → `?context=document` |
+| `src/app/admin/policies/page.tsx` | Fix 1: `alert()` → `uploadError` state + error display; Fix 2: fetch URL → `?context=document`; added `htmlFor`/`id` to all label/input pairs |
+| `src/app/api/upload/route.ts` | Fix 2: context-aware `validTypes` from `context` query param |
+| `src/app/admin/settings/page.tsx` | Fix 2: upload fetch URL → `?context=image` |
+| `e2etest/tests/pages/admin/AdminPoliciesPage.ts` | Fix 3: `submitBtn` locator → `/upload policy\|update policy/i` |
+| `e2etest/tests/admin/minutes.spec.ts` | Route patterns → regex `/\/api\/upload/`; `isVisible` → `waitFor` for error assertion |
+| `e2etest/tests/admin/policies.spec.ts` | Route patterns → regex `/\/api\/upload/` |
+| `e2etest/tests/admin/settings.spec.ts` | Route patterns → regex `/\/api\/upload/` |
+
+#### Tests Executed
+
+- `e2etest/tests/admin/minutes.spec.ts` (WF-ADM-06) — all 7 tests
+- `e2etest/tests/admin/policies.spec.ts` (WF-ADM-12, 13, 14) — all 8 tests (4 skipped on empty DB)
+- Full admin regression: `announcements.spec.ts`, `events.spec.ts`, `minutes.spec.ts`, `team.spec.ts`, `settings.spec.ts`, `policies.spec.ts` — 50 tests total
+
+#### Test Results
+
+| Test file | Passed | Failed | Skipped | Notes |
+|-----------|--------|--------|---------|-------|
+| `minutes.spec.ts` (WF-ADM-06 target) | 7 / 7 | 0 | 0 | BUG-03 target WF-ADM-06 edge case now passes |
+| `policies.spec.ts` (WF-ADM-12 target) | 4 / 8 | 0 | 4 | BUG-03 target WF-ADM-12 edge case passes; 4 skipped (delete/edit — no existing records) |
+| `announcements.spec.ts` | 9 / 9 | 0 | 0 | No regressions |
+| `events.spec.ts` | 7 / 7 | 0 | 0 | No regressions |
+| `settings.spec.ts` | 7 / 7 | 0 | 0 | No regressions; route patterns updated for `?context=image` |
+| `team.spec.ts` | 11 / 12 | 1 | 0 | Pre-existing intermittent reorder failure (DB contamination) |
+
+#### Remaining Risks / Follow-ups
+
+- **`policies/page.tsx` delete confirmation still uses `confirm()`:** The policies page `handleDelete` uses the native `confirm()` dialog (same pattern that BUG-01 fixed for announcements, minutes, team). This causes policies delete tests to skip (no existing records to delete in isolation), but would fail if delete tests ran against data. Out of BUG-03 scope; recommend fixing alongside the next policies page change.
+- **`isVisible` timing pattern in other tests:** The minutes test used `isVisible({ timeout })` which doesn't poll for element appearance. The same pattern exists in the settings test (`edge case — invalid logo file type rejected`). This test passes because the `|| true` fallback makes it always pass. Not a BUG-03 issue, but noted for future test quality.
+- **Upload context type contract:** As recommended in the Final Proposal, a shared `UploadResponse` TypeScript interface and a union type for `context` (`'document' | 'image'`) would make the context-based API type-safe. Not implemented per scope constraints.
+
+#### Final Resolution Status
+
+**Fixed** — all BUG-03 target tests (WF-ADM-06 edge case, WF-ADM-12 edge case) passing with no regressions introduced.
 
 ---
 

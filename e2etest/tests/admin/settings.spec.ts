@@ -46,7 +46,7 @@ test.describe('WF-ADM-23: Settings', () => {
     await settingsPage.goto();
 
     // Mock upload API
-    await page.route('/api/upload', (route) =>
+    await page.route(/\/api\/upload/, (route) =>
       route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -71,7 +71,7 @@ test.describe('WF-ADM-23: Settings', () => {
     const settingsPage = new AdminSettingsPage(page);
     await settingsPage.goto();
 
-    await page.route('/api/upload', (route) =>
+    await page.route(/\/api\/upload/, (route) =>
       route.fulfill({ status: 400, body: JSON.stringify({ error: 'Invalid file type' }) })
     );
 
