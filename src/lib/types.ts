@@ -13,7 +13,6 @@ export interface Minutes {
     title: string;
     date: string;
     content?: string;
-    fileUrl?: string;
     createdAt: string;
 }
 

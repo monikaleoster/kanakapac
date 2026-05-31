@@ -23,7 +23,4 @@ export class MinutesPage {
     });
   }
 
-  getDownloadButtons() {
-    return this.page.getByRole('link', { name: /download minutes/i });
-  }
 }

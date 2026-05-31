@@ -8,7 +8,6 @@ interface MinutesData {
   title: string;
   date: string;
   content: string;
-  fileUrl?: string; // Add optional fileUrl
   createdAt: string;
 }
 
@@ -16,7 +15,6 @@ const emptyMinutes = {
   title: "",
   date: "",
   content: "",
-  fileUrl: "", // Add default empty fileUrl
 };
 
 export default function AdminMinutesPage() {
@@ -25,7 +23,6 @@ export default function AdminMinutesPage() {
   const [form, setForm] = useState(emptyMinutes);
   const [showForm, setShowForm] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [uploadError, setUploadError] = useState("");
 
   useEffect(() => {
     fetchMinutes();
@@ -44,41 +41,14 @@ export default function AdminMinutesPage() {
       title: item.title,
       date: item.date,
       content: item.content,
-      fileUrl: item.fileUrl || "",
     });
-    setUploadError("");
     setShowForm(true);
   }
 
   function handleNew() {
     setEditing(null);
     setForm(emptyMinutes);
-    setUploadError("");
     setShowForm(true);
-  }
-
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const res = await fetch("/api/upload?context=document", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) throw new Error("Upload failed");
-
-      const data = await res.json();
-      setUploadError("");
-      setForm((prev) => ({ ...prev, fileUrl: data.fileUrl }));
-    } catch (error) {
-      console.error("Upload error:", error);
-      setUploadError("File upload failed. Invalid file type.");
-    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -101,7 +71,6 @@ export default function AdminMinutesPage() {
     setShowForm(false);
     setEditing(null);
     setForm(emptyMinutes);
-    setUploadError("");
     fetchMinutes();
   }
 
@@ -180,9 +149,7 @@ export default function AdminMinutesPage() {
                   id="min-title"
                   type="text"
                   value={form.title}
-                  onChange={(e) =>
-                    setForm({ ...form, title: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   placeholder="e.g., March 2026 General Meeting"
                   required
@@ -201,26 +168,6 @@ export default function AdminMinutesPage() {
                   required
                 />
               </div>
-              <div className="col-span-1 md:col-span-2">
-                <label htmlFor="min-file" className="block text-sm font-medium text-gray-700 mb-1">
-                  Upload Minutes (PDF, DOC, DOCX, TXT)
-                </label>
-                <input
-                  id="min-file"
-                  type="file"
-                  accept=".pdf,.doc,.docx,.txt"
-                  onChange={handleFileChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-                {form.fileUrl && (
-                  <p className="mt-1 text-sm text-green-600">
-                    File uploaded: {form.fileUrl.split("/").pop()}
-                  </p>
-                )}
-                {uploadError && (
-                  <p className="mt-1 text-sm text-red-600">{uploadError}</p>
-                )}
-              </div>
             </div>
             <div>
               <label htmlFor="min-content" className="block text-sm font-medium text-gray-700 mb-1">
@@ -229,9 +176,7 @@ export default function AdminMinutesPage() {
               <textarea
                 id="min-content"
                 value={form.content}
-                onChange={(e) =>
-                  setForm({ ...form, content: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, content: e.target.value })}
                 rows={12}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-sm"
                 placeholder="## Attendance&#10;&#10;Present: ...&#10;&#10;## Agenda Items&#10;&#10;### 1. Treasurer's Report&#10;- ..."
@@ -254,7 +199,6 @@ export default function AdminMinutesPage() {
                 onClick={() => {
                   setShowForm(false);
                   setEditing(null);
-                  setUploadError("");
                 }}
                 className="text-gray-600 px-4 py-2 rounded-md hover:bg-gray-100"
               >
