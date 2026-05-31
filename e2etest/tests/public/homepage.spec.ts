@@ -8,6 +8,7 @@ test.describe('WF-PUB-01: Homepage', () => {
     await home.goto();
 
     await expect(home.heading).toBeVisible();
+    await expect(home.heading).toContainText(/welcome to/i);
     await expect(home.viewEventsBtn).toBeVisible();
     await expect(home.learnAboutBtn).toBeVisible();
 

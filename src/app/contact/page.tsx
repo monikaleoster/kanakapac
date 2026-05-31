@@ -1,4 +1,5 @@
 import { getSchoolSettings } from "@/lib/data";
+import ContactForm from "@/components/ContactForm";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +43,14 @@ export default async function ContactPage() {
                 </svg>
                 <div>
                   <p className="font-medium text-gray-900">Email</p>
-                  <p className="text-gray-600">{settings.email}</p>
+                  {settings.email && (
+                    <a
+                      href={`mailto:${settings.email}`}
+                      className="text-primary-600 hover:underline"
+                    >
+                      {settings.email}
+                    </a>
+                  )}
                 </div>
               </div>
               <div className="flex items-start">
@@ -113,77 +121,7 @@ export default async function ContactPage() {
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Send a Message
           </h2>
-          <form className="space-y-4">
-            <div>
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Your Name
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
-                placeholder="Full name"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Email Address
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
-                placeholder="you@example.com"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="subject"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Subject
-              </label>
-              <input
-                type="text"
-                id="subject"
-                name="subject"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
-                placeholder="What is this about?"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="message"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Message
-              </label>
-              <textarea
-                id="message"
-                name="message"
-                rows={5}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
-                placeholder="Your message..."
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full bg-primary-600 text-white py-2 px-4 rounded-md font-medium hover:bg-primary-700 transition-colors"
-            >
-              Send Message
-            </button>
-            <p className="text-xs text-gray-500 text-center">
-              This form will open your email client to send the message.
-            </p>
-          </form>
+          <ContactForm />
         </div>
       </div>
     </div>

@@ -3,6 +3,8 @@ import { AdminPoliciesPage } from '../pages/admin/AdminPoliciesPage';
 
 test.use({ storageState: 'tests/.auth/admin.json' });
 
+const TEST_POLICY_NAMES = ['E2E Test Policy'];
+
 // WF-ADM-12: Manage Policies — Create
 // WF-ADM-13: Manage Policies — Edit
 // WF-ADM-14: Manage Policies — Delete
@@ -112,6 +114,16 @@ test.describe('WF-ADM-12: Policies — Create', () => {
 
     const errorVisible = await page.getByText(/error|400|required/i).isVisible({ timeout: 5000 }).catch(() => false);
     expect(errorVisible || true).toBeTruthy(); // form behavior varies; just ensure no crash
+  });
+
+  test.afterAll(async ({ request }) => {
+    const res = await request.get('/api/policies');
+    const policies: Array<{ id: string; title: string }> = await res.json();
+    for (const policy of policies) {
+      if (TEST_POLICY_NAMES.includes(policy.title)) {
+        await request.delete(`/api/policies?id=${policy.id}`);
+      }
+    }
   });
 });
 

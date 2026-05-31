@@ -12,7 +12,7 @@ export class HomePage {
 
   constructor(page: Page) {
     this.page = page;
-    this.heading = page.getByRole('heading', { name: /welcome to kanaka pac/i });
+    this.heading = page.getByRole('heading', { level: 1, name: /welcome to/i });
     this.viewEventsBtn = page.getByRole('link', { name: /view upcoming events/i });
     this.learnAboutBtn = page.getByRole('link', { name: /learn about pac/i });
     this.urgentBanner = page.locator('[class*="bg-red"], [class*="urgent"]').first();

@@ -20,7 +20,7 @@ export default function Navigation() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <nav>
+    <nav aria-label="Main navigation">
       {/* Mobile menu button */}
       <button
         className="md:hidden p-2 rounded-md hover:bg-primary-700"
