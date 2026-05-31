@@ -7,7 +7,6 @@ const mockMinutes: Minutes = {
     title: 'February 2026 Meeting',
     date: '2026-02-05',
     content: 'Budget review and event planning.',
-    fileUrl: 'https://example.com/minutes.pdf',
     createdAt: '2026-02-05T19:00:00Z',
 };
 

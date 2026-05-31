@@ -31,18 +31,6 @@ test.describe('WF-PUB-04: Minutes Archive', () => {
     }
   });
 
-  test('happy path — download button present on card with fileUrl', async ({ page }) => {
-    const minutesPage = new MinutesPage(page);
-    await minutesPage.goto();
-
-    const downloadBtns = minutesPage.getDownloadButtons();
-    const count = await downloadBtns.count();
-    if (count > 0) {
-      await expect(downloadBtns.first()).toBeVisible();
-      await expect(downloadBtns.first()).toHaveAttribute('href', /.+/);
-    }
-  });
-
   test('happy path — clicking a minutes card navigates to detail page', async ({ page }) => {
     const minutesPage = new MinutesPage(page);
     await minutesPage.goto();
@@ -75,13 +63,8 @@ test.describe('WF-PUB-04: Minutes Archive', () => {
     const cards = minutesPage.getMinutesCards();
     const count = await cards.count();
     if (count > 0) {
-      // Cards without a download button show a content preview — it should not start with # or *
-      const downloadBtns = minutesPage.getDownloadButtons();
-      const downloadCount = await downloadBtns.count();
-      if (downloadCount === 0) {
-        const text = await cards.first().textContent() ?? '';
-        expect(text.trimStart()).not.toMatch(/^[#*]/);
-      }
+      const text = await cards.first().textContent() ?? '';
+      expect(text.trimStart()).not.toMatch(/^[#*]/);
     }
   });
 });
@@ -89,7 +72,6 @@ test.describe('WF-PUB-04: Minutes Archive', () => {
 // WF-PUB-05: Read Meeting Minutes Detail
 test.describe('WF-PUB-05: Minutes Detail', () => {
   test('happy path — back link present', async ({ page }) => {
-    // Navigate to minutes list first to get a real ID
     await page.goto('/minutes');
     const cards = page.locator('article, li, [class*="card"]').filter({ has: page.locator('a[href*="/minutes/"]') });
     const count = await cards.count();
@@ -123,7 +105,6 @@ test.describe('WF-PUB-05: Minutes Detail', () => {
     const detailPage = new MinutesDetailPage(page);
     await detailPage.goto('nonexistent-id-000');
 
-    // Next.js notFound() triggers a 404 page
     const status = page.locator('h1, h2').filter({ hasText: /404|not found/i });
     await expect(status).toBeVisible();
   });

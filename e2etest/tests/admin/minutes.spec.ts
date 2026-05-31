@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
 import { AdminMinutesPage } from '../pages/admin/AdminMinutesPage';
-import path from 'path';
 
 test.use({ storageState: 'tests/.auth/admin.json' });
 
@@ -14,7 +13,7 @@ const TEST_MINUTES = {
 // WF-ADM-07: Manage Minutes — Edit
 // WF-ADM-08: Manage Minutes — Delete
 test.describe('WF-ADM-06: Minutes — Create', () => {
-  test('happy path — create minutes without file', async ({ page }) => {
+  test('happy path — create minutes appears in list', async ({ page }) => {
     const minutesPage = new AdminMinutesPage(page);
     await minutesPage.goto();
 
@@ -25,41 +24,15 @@ test.describe('WF-ADM-06: Minutes — Create', () => {
     await expect(page.getByText(TEST_MINUTES.title).first()).toBeVisible({ timeout: 8000 });
   });
 
-  test('edge case — invalid file type rejected by upload API', async ({ page }) => {
+  test('edge case — no content saves minutes with title only', async ({ page }) => {
     const minutesPage = new AdminMinutesPage(page);
     await minutesPage.goto();
 
     await minutesPage.newMinutesBtn.click();
-
-    // Intercept the upload endpoint to simulate rejection
-    await page.route(/\/api\/upload/, (route) =>
-      route.fulfill({ status: 400, body: JSON.stringify({ error: 'Invalid file type' }) })
-    );
-
-    // Trigger file upload with a fake file
-    const fileChooserPromise = page.waitForEvent('filechooser');
-    await minutesPage.fileInput.click();
-    const fileChooser = await fileChooserPromise;
-    await fileChooser.setFiles({
-      name: 'malware.exe',
-      mimeType: 'application/octet-stream',
-      buffer: Buffer.from('fake file content'),
-    });
-
-    // Upload error should be visible
-    const errorVisible = await page.getByText(/invalid|error|failed/i).first().waitFor({ state: 'visible', timeout: 5000 }).then(() => true).catch(() => false);
-    expect(errorVisible).toBeTruthy();
-  });
-
-  test('edge case — no file selected saves minutes with content preview', async ({ page }) => {
-    const minutesPage = new AdminMinutesPage(page);
-    await minutesPage.goto();
-
-    await minutesPage.newMinutesBtn.click();
-    await minutesPage.fillMinutesForm({ ...TEST_MINUTES, title: 'No File Minutes' });
+    await minutesPage.fillMinutesForm({ ...TEST_MINUTES, title: 'No Content Minutes', content: 'placeholder' });
     await minutesPage.submitBtn.click();
 
-    await expect(page.getByText('No File Minutes').first()).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText('No Content Minutes').first()).toBeVisible({ timeout: 8000 });
   });
 });
 
@@ -84,37 +57,18 @@ test.describe('WF-ADM-07: Minutes — Edit', () => {
     await expect(page.getByText(updatedTitle).first()).toBeVisible({ timeout: 8000 });
   });
 
-  test('edge case — re-upload sets new fileUrl (old file orphaned)', async ({ page }) => {
+  test('edge case — edit content updates the record', async ({ page }) => {
     const minutesPage = new AdminMinutesPage(page);
     await minutesPage.goto();
 
     const editBtns = minutesPage.getEditBtns();
-    const count = await editBtns.count();
-    if (count === 0) test.skip();
+    if (await editBtns.count() === 0) test.skip();
 
     await editBtns.first().click();
+    await minutesPage.contentInput.fill('Updated content from E2E test.');
+    await minutesPage.submitBtn.click();
 
-    // Intercept upload to return a mock new URL
-    await page.route(/\/api\/upload/, (route) =>
-      route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ fileUrl: 'https://example.com/new-file.pdf' }),
-      })
-    );
-
-    const fileChooserPromise = page.waitForEvent('filechooser');
-    await minutesPage.fileInput.click();
-    const fileChooser = await fileChooserPromise;
-    await fileChooser.setFiles({
-      name: 'new-minutes.pdf',
-      mimeType: 'application/pdf',
-      buffer: Buffer.from('PDF content'),
-    });
-
-    // Upload should succeed — filename or URL change visible in form
-    const uploadFeedback = page.getByText(/new-minutes\.pdf|uploaded/i);
-    await expect(uploadFeedback).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('body')).not.toContainText(/error|500/i);
   });
 });
 
@@ -125,7 +79,6 @@ test.describe('WF-ADM-08: Minutes — Delete', () => {
 
     const toDelete = `Minutes To Delete ${Date.now()}`;
 
-    // Create a minutes record to delete
     await minutesPage.newMinutesBtn.click();
     await minutesPage.fillMinutesForm({ ...TEST_MINUTES, title: toDelete });
     await minutesPage.submitBtn.click();

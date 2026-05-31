@@ -6,7 +6,6 @@ export class AdminMinutesPage {
   readonly titleInput: Locator;
   readonly dateInput: Locator;
   readonly contentInput: Locator;
-  readonly fileInput: Locator;
   readonly submitBtn: Locator;
   readonly confirmDeleteBtn: Locator;
   readonly cancelDeleteBtn: Locator;
@@ -17,7 +16,6 @@ export class AdminMinutesPage {
     this.titleInput = page.getByLabel(/title/i);
     this.dateInput = page.getByLabel(/date/i);
     this.contentInput = page.getByLabel(/content/i);
-    this.fileInput = page.locator('input[type="file"]');
     this.submitBtn = page.getByRole('button', { name: /post|update|save|submit|create/i }).last();
     this.confirmDeleteBtn = page.getByTestId('confirm-delete-btn');
     this.cancelDeleteBtn = page.getByTestId('cancel-delete-btn');
