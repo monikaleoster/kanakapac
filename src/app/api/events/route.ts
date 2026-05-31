@@ -3,6 +3,8 @@ import { getEvents, saveEvent, deleteEvent } from "@/lib/data";
 import { isAuthenticated } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const events = await getEvents();
   return NextResponse.json(events);

@@ -17,6 +17,7 @@ import { unstable_noStore as noStore } from "next/cache";
 
 // Events
 export async function getEvents(): Promise<Event[]> {
+  noStore();
   const { data, error } = await supabase
     .from("events")
     .select("*")
@@ -41,6 +42,7 @@ export async function getEvents(): Promise<Event[]> {
 }
 
 export async function getUpcomingEvents(): Promise<Event[]> {
+  noStore();
   const now = new Date().toISOString().split('T')[0];
   const { data, error } = await supabase
     .from("events")
@@ -67,6 +69,7 @@ export async function getUpcomingEvents(): Promise<Event[]> {
 }
 
 export async function getPastEvents(): Promise<Event[]> {
+  noStore();
   const now = new Date().toISOString().split('T')[0];
   const { data, error } = await supabase
     .from("events")
@@ -93,6 +96,7 @@ export async function getPastEvents(): Promise<Event[]> {
 }
 
 export async function getEventById(id: string): Promise<Event | undefined> {
+  noStore();
   const { data, error } = await supabase
     .from("events")
     .select("*")
@@ -173,6 +177,7 @@ export async function saveRsvp(rsvp: Omit<Rsvp, 'id' | 'createdAt'>): Promise<{ 
 }
 
 export async function getRsvpsByEvent(eventId: string): Promise<Rsvp[]> {
+  noStore();
   const { data, error } = await supabase
     .from("rsvps")
     .select("*")
@@ -195,6 +200,7 @@ export async function getRsvpsByEvent(eventId: string): Promise<Rsvp[]> {
 
 // Minutes
 export async function getMinutes(): Promise<Minutes[]> {
+  noStore();
   const { data, error } = await supabase
     .from("minutes")
     .select("*")
@@ -215,6 +221,7 @@ export async function getMinutes(): Promise<Minutes[]> {
 }
 
 export async function getMinutesById(id: string): Promise<Minutes | undefined> {
+  noStore();
   const { data, error } = await supabase
     .from("minutes")
     .select("*")
@@ -267,6 +274,7 @@ export async function deleteMinutes(id: string): Promise<void> {
 
 // Announcements
 export async function getAnnouncements(): Promise<Announcement[]> {
+  noStore();
   const { data, error } = await supabase
     .from("announcements")
     .select("*")
@@ -288,6 +296,7 @@ export async function getAnnouncements(): Promise<Announcement[]> {
 }
 
 export async function getActiveAnnouncements(): Promise<Announcement[]> {
+  noStore();
   const now = new Date().toISOString();
   const { data, error } = await supabase
     .from("announcements")
@@ -311,6 +320,7 @@ export async function getActiveAnnouncements(): Promise<Announcement[]> {
 }
 
 export async function getAnnouncementById(id: string): Promise<Announcement | undefined> {
+  noStore();
   const { data, error } = await supabase
     .from("announcements")
     .select("*")
@@ -365,6 +375,7 @@ export async function deleteAnnouncement(id: string): Promise<void> {
 
 // Policies
 export async function getPolicies(): Promise<Policy[]> {
+  noStore();
   const { data, error } = await supabase
     .from("policies")
     .select("*")
@@ -385,6 +396,7 @@ export async function getPolicies(): Promise<Policy[]> {
 }
 
 export async function getPolicyById(id: string): Promise<Policy | undefined> {
+  noStore();
   const { data, error } = await supabase
     .from("policies")
     .select("*")
@@ -437,6 +449,7 @@ export async function deletePolicy(id: string): Promise<void> {
 
 // Team Members
 export async function getTeamMembers(): Promise<TeamMember[]> {
+  noStore();
   const { data, error } = await supabase
     .from("team_members")
     .select("*")
@@ -458,6 +471,7 @@ export async function getTeamMembers(): Promise<TeamMember[]> {
 }
 
 export async function getTeamMemberById(id: string): Promise<TeamMember | undefined> {
+  noStore();
   const { data, error } = await supabase
     .from("team_members")
     .select("*")
@@ -512,6 +526,7 @@ export async function deleteTeamMember(id: string): Promise<void> {
 
 // Subscribers
 export async function getSubscribers(): Promise<Subscriber[]> {
+  noStore();
   const { data, error } = await supabase
     .from("subscribers")
     .select("*")
