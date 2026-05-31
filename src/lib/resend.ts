@@ -1,9 +1,15 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Kanaka PAC <onboarding@resend.dev>';
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+
+function getResendClient(): Resend {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error('RESEND_API_KEY environment variable is not set');
+  }
+  return new Resend(apiKey);
+}
 
 export interface SendEmailOptions {
   to: string | string[];
@@ -12,6 +18,7 @@ export interface SendEmailOptions {
 }
 
 export async function sendEmail({ to, subject, html }: SendEmailOptions) {
+  const resend = getResendClient();
   const { data, error } = await resend.emails.send({
     from: FROM_EMAIL,
     to: Array.isArray(to) ? to : [to],
@@ -126,4 +133,3 @@ export function buildWelcomeEmailHtml(unsubscribeUrl: string, pacName: string): 
   `;
 }
 
-export { resend };
