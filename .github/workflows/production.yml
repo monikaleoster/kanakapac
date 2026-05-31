@@ -17,14 +17,18 @@ jobs:
         run: sudo apt-get install -y postgresql-client
 
       - name: Apply all migrations in order
+        env:
+          PGSSLMODE: require
         run: |
           for f in $(ls supabase/migrations/*.sql | sort); do
             echo "Applying $f..."
-            psql ${{ secrets.PROD_DATABASE_URL }} -f "$f" -v ON_ERROR_STOP=1
+            psql "${{ secrets.PROD_DATABASE_URL }}" -f "$f" -v ON_ERROR_STOP=1
           done
 
       - name: Reload PostgREST schema cache
-        run: psql ${{ secrets.PROD_DATABASE_URL }} -c "NOTIFY pgrst, 'reload schema';"
+        env:
+          PGSSLMODE: require
+        run: psql "${{ secrets.PROD_DATABASE_URL }}" -c "NOTIFY pgrst, 'reload schema';"
 
   deploy-production:
     name: Deploy to Vercel Production

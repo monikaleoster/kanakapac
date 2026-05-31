@@ -59,6 +59,8 @@ jobs:
         run: sudo apt-get install -y postgresql-client
 
       - name: Apply all migrations to staging Supabase
+        env:
+          PGSSLMODE: require
         run: |
           for f in $(ls supabase/migrations/*.sql | sort); do
             echo "Applying $f..."
@@ -66,6 +68,8 @@ jobs:
           done
 
       - name: Reload PostgREST schema cache
+        env:
+          PGSSLMODE: require
         run: psql "${{ secrets.CI_DATABASE_URL }}" -c "NOTIFY pgrst, 'reload schema';"
 
   lint-and-typecheck:
