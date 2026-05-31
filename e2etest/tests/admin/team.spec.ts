@@ -10,6 +10,13 @@ const TEST_MEMBER = {
   email: 'e2e-member@example.com',
 };
 
+const TEST_MEMBER_NAMES = [
+  'E2E Test Member',
+  'Public Visible Member',
+  'No Email Member',
+  'Default Order Member',
+];
+
 // WF-ADM-15: Manage Team Members — Create
 // WF-ADM-16: Manage Team Members — Edit
 // WF-ADM-17: Manage Team Members — Delete
@@ -65,6 +72,16 @@ test.describe('WF-ADM-15: Team — Create', () => {
     await teamPage.submitBtn.click();
 
     await expect(page.getByText('Default Order Member').first()).toBeVisible({ timeout: 8000 });
+  });
+
+  test.afterAll(async ({ request }) => {
+    const res = await request.get('/api/team');
+    const members: Array<{ id: string; name: string }> = await res.json();
+    for (const member of members) {
+      if (TEST_MEMBER_NAMES.includes(member.name)) {
+        await request.delete(`/api/team?id=${member.id}`);
+      }
+    }
   });
 });
 

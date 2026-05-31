@@ -1,5 +1,6 @@
 import { getMinutes } from "@/lib/data";
 import MinutesCard from "@/components/MinutesCard";
+import SubscribeForm from "@/components/SubscribeForm";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,8 @@ export default async function MinutesPage() {
           No meeting minutes have been posted yet.
         </div>
       )}
+
+      <SubscribeForm />
     </div>
   );
 }

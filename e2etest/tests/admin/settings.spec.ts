@@ -3,8 +3,22 @@ import { AdminSettingsPage } from '../pages/admin/AdminSettingsPage';
 
 test.use({ storageState: 'tests/.auth/admin.json' });
 
+let originalSettings: Record<string, unknown> = {};
+
 // WF-ADM-23: Manage Settings — Update
 test.describe('WF-ADM-23: Settings', () => {
+  test.beforeAll(async ({ request }) => {
+    const res = await request.get('/api/settings');
+    originalSettings = await res.json();
+  });
+
+  test.afterAll(async ({ request }) => {
+    await request.post('/api/settings', {
+      data: originalSettings,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  });
+
   test('happy path — settings page loads and pre-fills current values', async ({ page }) => {
     const settingsPage = new AdminSettingsPage(page);
     await settingsPage.goto();

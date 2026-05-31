@@ -9,7 +9,7 @@ export default function FloatingPromo() {
         <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
             {/* Tooltip */}
             {showTooltip && (
-                <div className="mb-3 bg-white rounded-xl shadow-2xl border border-gray-100 p-4 w-64 animate-fade-in">
+                <div data-testid="promo-tooltip" className="mb-3 bg-white rounded-xl shadow-2xl border border-gray-100 p-4 w-64 animate-fade-in">
                     <p className="text-sm text-gray-800 font-medium mb-1">
                         ✨ Built by <span className="text-primary-600 font-bold">Vector Local</span>
                     </p>

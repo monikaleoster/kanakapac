@@ -20,14 +20,15 @@ export class NavigationPage {
     this.floatingPromoBtn = page.locator('[class*="fixed"][class*="bottom"], [class*="floating"]').filter({
       has: page.locator('button'),
     }).first().locator('button');
-    this.floatingPromoTooltip = page.getByText(/vector local|book a free/i);
+    this.floatingPromoTooltip = page.getByTestId('promo-tooltip');
   }
 
   getNavLink(name: string) {
-    return this.page.getByRole('link', { name: new RegExp(name, 'i') });
+    return this.page.locator('nav[aria-label="Main navigation"]')
+      .getByRole('link', { name: new RegExp(`^${name}$`, 'i') });
   }
 
   getConsultationLink() {
-    return this.page.getByRole('link', { name: /book a free consultation/i });
+    return this.floatingPromoTooltip.getByRole('link', { name: /book a free consultation/i });
   }
 }

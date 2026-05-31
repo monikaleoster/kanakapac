@@ -9,7 +9,7 @@ export class MinutesPage {
   constructor(page: Page) {
     this.page = page;
     this.pageHeading = page.getByRole('heading', { name: /meeting minutes/i }).first();
-    this.noMinutesMsg = page.getByText(/no minutes/i);
+    this.noMinutesMsg = page.getByText(/no meeting minutes have been posted/i);
     this.subscribeForm = page.locator('form').filter({ has: page.getByRole('button', { name: /subscribe/i }) });
   }
 
