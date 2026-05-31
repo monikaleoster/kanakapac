@@ -46,6 +46,28 @@ jobs:
           psql "$DATABASE_URL" -c "\dt" | grep -E "events|rsvps|minutes|announcements|policies|team_members|subscribers|settings"
           psql "$DATABASE_URL" -c "\d events" | grep -E "rsvp_enabled|ticket_url"
 
+  migrate-staging-db:
+    name: Migrate Staging Database
+    runs-on: ubuntu-latest
+    needs: test-migrations
+    # Skip on main — staging.yml handles that push
+    if: github.ref != 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get install -y postgresql-client
+
+      - name: Apply all migrations to staging Supabase
+        run: |
+          for f in $(ls supabase/migrations/*.sql | sort); do
+            echo "Applying $f..."
+            psql "${{ secrets.CI_DATABASE_URL }}" -f "$f" -v ON_ERROR_STOP=1
+          done
+
+      - name: Reload PostgREST schema cache
+        run: psql "${{ secrets.CI_DATABASE_URL }}" -c "NOTIFY pgrst, 'reload schema';"
+
   lint-and-typecheck:
     name: Lint & Type Check
     runs-on: ubuntu-latest
