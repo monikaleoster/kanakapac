@@ -79,7 +79,7 @@ Held for after the site is live and in use. Revisit based on actual family and a
 - Search across content
 - Multiple admin accounts (extend NextAuth with a Supabase users table)
 
-
+---
 
 ## Priority Features
 
@@ -91,5 +91,3 @@ Parents subscribe to receive email alerts for new announcements and events by ca
 
 ### 3. Volunteer Sign-up
 Parents can register for specific events or PAC committees directly on the site. Reduces organizer workload by eliminating back-and-forth emails and centralizing sign-up tracking in the admin dashboard.
-
----
