@@ -7,6 +7,45 @@ on:
     branches: [main, "feature/**", "claude/**"]
 
 jobs:
+  test-migrations:
+    name: Test DB Migrations
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get install -y postgresql-client
+
+      - name: Apply all migrations in order
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+        run: |
+          for f in $(ls supabase/migrations/*.sql | sort); do
+            echo "Applying $f..."
+            psql "$DATABASE_URL" -f "$f" -v ON_ERROR_STOP=1
+          done
+
+      - name: Verify expected tables exist
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+        run: |
+          psql "$DATABASE_URL" -c "\dt" | grep -E "events|rsvps|minutes|announcements|policies|team_members|subscribers|settings"
+          psql "$DATABASE_URL" -c "\d events" | grep -E "rsvp_enabled|ticket_url"
+
   lint-and-typecheck:
     name: Lint & Type Check
     runs-on: ubuntu-latest
