@@ -4,7 +4,7 @@ import { formatDate } from "@/lib/format";
 
 export default function MinutesCard({ minutes }: { minutes: Minutes }) {
   return (
-    <div className="relative bg-white rounded-lg shadow-md border border-gray-100 p-6 hover:shadow-lg transition-shadow">
+    <div data-testid="minutes-card" className="relative bg-white rounded-lg shadow-md border border-gray-100 p-6 hover:shadow-lg transition-shadow">
       <div className="flex items-center justify-between mb-4">
         <div>
           <Link href={`/minutes/${minutes.id}`} className="hover:text-primary-600">

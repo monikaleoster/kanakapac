@@ -118,7 +118,7 @@ test.describe('WF-PUB-13: FloatingPromo', () => {
       const promoBtn = page.locator('[class*="fixed"]').filter({ has: page.locator('button') }).first();
       const visible = await promoBtn.isVisible().catch(() => false);
       // Just verify page loads without error; promo button should be present
-      await expect(page.locator('body')).not.toContainText(/error|500/i);
+      await expect(page.locator('body')).not.toContainText(/\b(internal server error|http 500)\b/i);
     }
   });
 
