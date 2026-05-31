@@ -23,6 +23,9 @@ jobs:
             psql ${{ secrets.PROD_DATABASE_URL }} -f "$f" -v ON_ERROR_STOP=1
           done
 
+      - name: Reload PostgREST schema cache
+        run: psql ${{ secrets.PROD_DATABASE_URL }} -c "NOTIFY pgrst, 'reload schema';"
+
   deploy-production:
     name: Deploy to Vercel Production
     runs-on: ubuntu-latest

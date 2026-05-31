@@ -6,44 +6,42 @@ export async function initDatabase() {
     const databaseUrl = process.env.DATABASE_URL;
 
     if (!databaseUrl || databaseUrl.includes("[YOUR-PASSWORD]")) {
-        console.warn("⚠️ DATABASE_URL is not configured properly. Skipping auto-initialization.");
+        console.warn("⚠️ DATABASE_URL is not configured. Skipping database initialization.");
         return;
     }
 
     const sql = postgres(databaseUrl);
 
     try {
-        // Check if the events table exists as a proxy for schema initialization
-        const tables = await sql`
-      SELECT tablename 
-      FROM pg_catalog.pg_tables 
-      WHERE schemaname = 'public' AND tablename = 'events'
-    `;
+        // Apply all migration files in sorted order (idempotent — safe to re-run)
+        const migrationsDir = path.join(process.cwd(), "supabase", "migrations");
+        if (fs.existsSync(migrationsDir)) {
+            const files = fs.readdirSync(migrationsDir)
+                .filter(f => f.endsWith(".sql"))
+                .sort();
 
-        if (tables.length === 0) {
-            console.log("🚀 Initializing database schema...");
-
-            const schemaPath = path.join(process.cwd(), "supabase", "schema.sql");
-            const seedPath = path.join(process.cwd(), "supabase", "seed.sql");
-
-            if (fs.existsSync(schemaPath)) {
-                const schema = fs.readFileSync(schemaPath, "utf8");
-                await sql.unsafe(schema);
-                console.log("✅ Schema created.");
+            for (const file of files) {
+                const filePath = path.join(migrationsDir, file);
+                const migration = fs.readFileSync(filePath, "utf8");
+                await sql.unsafe(migration);
+                console.log(`✅ Applied migration: ${file}`);
             }
+        }
 
+        // Apply seed data if the events table is empty
+        const [{ count }] = await sql`SELECT COUNT(*)::int AS count FROM events`;
+        if (count === 0) {
+            const seedPath = path.join(process.cwd(), "supabase", "seed.sql");
             if (fs.existsSync(seedPath)) {
                 const seed = fs.readFileSync(seedPath, "utf8");
                 await sql.unsafe(seed);
                 console.log("✅ Seed data populated.");
             }
-        } else {
-            console.log("ℹ️ Database schema already exists.");
         }
 
-        // Always notify PostgREST to reload schema cache to avoid stale cache errors like PGRST205
+        // Reload PostgREST schema cache so new columns are visible immediately
         await sql`NOTIFY pgrst, 'reload schema'`;
-        console.log("📡 Notified Supabase to reload schema cache.");
+        console.log("📡 PostgREST schema cache reloaded.");
     } catch (error) {
         console.error("❌ Database initialization failed:", error);
     } finally {
