@@ -69,3 +69,71 @@ CREATE TABLE IF NOT EXISTS settings (
   meeting_time TEXT,
   CONSTRAINT single_row CHECK (id = 1)
 );
+
+
+-- Public can read events
+CREATE POLICY "Public read events"
+  ON events FOR SELECT
+                           TO anon
+                           USING (true);
+
+-- Block anon from writing
+CREATE POLICY "Block anon writes"
+  ON events FOR INSERT, UPDATE, DELETE
+    TO anon
+    USING (false);
+
+
+
+-- ============ EVENTS ============
+ALTER TABLE events ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public read events"
+  ON events FOR SELECT
+                           TO anon
+                           USING (true);
+
+-- ============ ANNOUNCEMENTS ============
+ALTER TABLE announcements ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public read announcements"
+  ON announcements FOR SELECT
+                                  TO anon
+                                  USING (true);
+
+-- ============ MINUTES ============
+ALTER TABLE minutes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public read minutes"
+  ON minutes FOR SELECT
+                            TO anon
+                            USING (true);
+
+
+ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public read settings"
+  ON settings FOR SELECT
+                             TO anon
+                             USING (true);
+
+ALTER TABLE policies ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public read policies"
+  ON policies FOR SELECT
+                             TO anon
+                             USING (true);
+
+ALTER TABLE subscribers ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public read subscribers"
+  ON subscribers FOR SELECT
+                                TO anon
+                                USING (true);
+
+ALTER TABLE team_members ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public read subscribers"
+  ON team_members FOR SELECT
+                                 TO anon
+                                 USING (true);
