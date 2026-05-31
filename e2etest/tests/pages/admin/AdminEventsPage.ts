@@ -8,10 +8,13 @@ export class AdminEventsPage {
   readonly timeInput: Locator;
   readonly locationInput: Locator;
   readonly descriptionInput: Locator;
+  readonly ticketUrlInput: Locator;
+  readonly rsvpCheckbox: Locator;
   readonly submitBtn: Locator;
   readonly confirmDeleteBtn: Locator;
   readonly cancelDeleteBtn: Locator;
   readonly deleteModal: Locator;
+  readonly rsvpModal: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -21,10 +24,13 @@ export class AdminEventsPage {
     this.timeInput = page.getByLabel(/time/i);
     this.locationInput = page.getByLabel(/location/i);
     this.descriptionInput = page.getByLabel(/description/i);
+    this.ticketUrlInput = page.getByLabel(/ticket url/i);
+    this.rsvpCheckbox = page.getByLabel(/enable rsvp/i);
     this.submitBtn = page.getByRole('button', { name: /save|submit|create|add|update/i }).last();
     this.deleteModal = page.locator('[role="dialog"], [class*="modal"]').first();
     this.confirmDeleteBtn = page.getByTestId('confirm-delete-btn');
     this.cancelDeleteBtn = page.getByTestId('cancel-delete-btn');
+    this.rsvpModal = page.getByTestId('close-rsvp-modal-btn').locator('..');
   }
 
   async goto() {
@@ -46,11 +52,21 @@ export class AdminEventsPage {
     });
   }
 
-  async fillEventForm(data: { title: string; date: string; time: string; location: string; description: string }) {
+  getRsvpBtns() {
+    return this.page.getByTestId('rsvp-btn');
+  }
+
+  async fillEventForm(data: { title: string; date: string; time: string; location: string; description: string; rsvpEnabled?: boolean; ticketUrl?: string }) {
     await this.titleInput.fill(data.title);
     await this.dateInput.fill(data.date);
     await this.timeInput.fill(data.time);
     await this.locationInput.fill(data.location);
     await this.descriptionInput.fill(data.description);
+    if (data.ticketUrl) {
+      await this.ticketUrlInput.fill(data.ticketUrl);
+    }
+    if (data.rsvpEnabled) {
+      await this.rsvpCheckbox.check();
+    }
   }
 }

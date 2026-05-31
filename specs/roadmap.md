@@ -78,3 +78,18 @@ Held for after the site is live and in use. Revisit based on actual family and a
 - Paginated archives for minutes and announcements
 - Search across content
 - Multiple admin accounts (extend NextAuth with a Supabase users table)
+
+
+
+## Priority Features
+
+### 1. Calendar Export (iCal / Google Calendar)
+Allow parents to add PAC events directly to their personal calendar with one click. No account required. Export individual events or subscribe to a full PAC calendar feed.
+
+### 2. Email Notification Opt-in
+Parents subscribe to receive email alerts for new announcements and events by category (e.g., urgent notices, upcoming events, meeting reminders). Drives ongoing engagement without requiring parents to check the site.
+
+### 3. Volunteer Sign-up
+Parents can register for specific events or PAC committees directly on the site. Reduces organizer workload by eliminating back-and-forth emails and centralizing sign-up tracking in the admin dashboard.
+
+---

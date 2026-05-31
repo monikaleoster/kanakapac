@@ -105,6 +105,56 @@ test.describe('WF-ADM-04: Events — Edit', () => {
   });
 });
 
+test.describe('WF-ADM-06: Events — RSVP', () => {
+  test('happy path — create event with RSVP enabled and ticket URL', async ({ page }) => {
+    const eventsPage = new AdminEventsPage(page);
+    await eventsPage.goto();
+
+    const title = `RSVP+Ticket Event ${Date.now()}`;
+    await eventsPage.newEventBtn.click();
+    await eventsPage.fillEventForm({
+      ...TEST_EVENT,
+      title,
+      rsvpEnabled: true,
+      ticketUrl: 'https://example.com/tickets',
+    });
+    await eventsPage.submitBtn.click();
+
+    await expect(page.getByText(title).first()).toBeVisible({ timeout: 8000 });
+
+    // Edit to verify fields were saved
+    const targetRow = page.locator('div')
+      .filter({ has: page.getByRole('heading', { name: title }) })
+      .filter({ has: page.getByRole('button', { name: /edit/i }) })
+      .last();
+    await targetRow.getByRole('button', { name: /edit/i }).click();
+
+    await expect(eventsPage.rsvpCheckbox).toBeChecked();
+    await expect(eventsPage.ticketUrlInput).toHaveValue('https://example.com/tickets');
+  });
+
+  test('happy path — admin can view RSVP list for event', async ({ page }) => {
+    const eventsPage = new AdminEventsPage(page);
+    await eventsPage.goto();
+
+    // Find an event with RSVP enabled (RSVPs button visible)
+    const rsvpBtns = eventsPage.getRsvpBtns();
+    const count = await rsvpBtns.count();
+    if (count === 0) test.skip();
+
+    await rsvpBtns.first().click();
+
+    // Modal should appear with either RSVPs or empty state
+    await expect(page.getByTestId('close-rsvp-modal-btn')).toBeVisible({ timeout: 5000 });
+    const hasRsvps = await page.getByRole('table').isVisible().catch(() => false);
+    const hasEmpty = await page.getByText(/no rsvps yet/i).isVisible().catch(() => false);
+    expect(hasRsvps || hasEmpty).toBeTruthy();
+
+    await page.getByTestId('close-rsvp-modal-btn').click();
+    await expect(page.getByTestId('close-rsvp-modal-btn')).not.toBeVisible();
+  });
+});
+
 test.describe('WF-ADM-05: Events — Delete', () => {
   test('happy path — delete event shows confirmation modal then removes from list', async ({ page }) => {
     const eventsPage = new AdminEventsPage(page);

@@ -16,10 +16,10 @@ test.describe('WF-PUB-06: About Page', () => {
     const aboutPage = new AboutPage(page);
     await aboutPage.goto();
 
-    await expect(page.getByText(/fundraising/i)).toBeVisible();
-    await expect(page.getByText(/advocacy/i)).toBeVisible();
-    await expect(page.getByText(/community building/i)).toBeVisible();
-    await expect(page.getByText(/volunteer coordination/i)).toBeVisible();
+    await expect(page.getByText(/fundraising/i).first()).toBeVisible();
+    await expect(page.getByText(/advocacy/i).first()).toBeVisible();
+    await expect(page.getByText(/community building/i).first()).toBeVisible();
+    await expect(page.getByText(/volunteer coordination/i).first()).toBeVisible();
   });
 
   test('happy path — executive team section shown', async ({ page }) => {

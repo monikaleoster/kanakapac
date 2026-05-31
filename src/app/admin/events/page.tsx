@@ -10,6 +10,16 @@ interface EventData {
   time: string;
   location: string;
   description: string;
+  rsvpEnabled: boolean;
+  ticketUrl: string;
+  createdAt: string;
+}
+
+interface RsvpEntry {
+  id: string;
+  eventId: string;
+  name: string;
+  email: string;
   createdAt: string;
 }
 
@@ -19,6 +29,8 @@ const emptyEvent = {
   time: "",
   location: "",
   description: "",
+  rsvpEnabled: false,
+  ticketUrl: "",
 };
 
 export default function AdminEventsPage() {
@@ -27,6 +39,9 @@ export default function AdminEventsPage() {
   const [form, setForm] = useState(emptyEvent);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [rsvpEventId, setRsvpEventId] = useState<string | null>(null);
+  const [rsvpList, setRsvpList] = useState<RsvpEntry[]>([]);
+  const [rsvpLoading, setRsvpLoading] = useState(false);
 
   useEffect(() => {
     fetchEvents();
@@ -47,6 +62,8 @@ export default function AdminEventsPage() {
       time: event.time,
       location: event.location,
       description: event.description,
+      rsvpEnabled: event.rsvpEnabled ?? false,
+      ticketUrl: event.ticketUrl ?? "",
     });
     setShowForm(true);
   }
@@ -91,9 +108,19 @@ export default function AdminEventsPage() {
     fetchEvents();
   }
 
+  async function handleViewRsvps(eventId: string) {
+    setRsvpEventId(eventId);
+    setRsvpLoading(true);
+    setRsvpList([]);
+    const res = await fetch(`/api/rsvp?eventId=${eventId}`);
+    if (res.ok) {
+      setRsvpList(await res.json());
+    }
+    setRsvpLoading(false);
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      {/* ... (keep existing header) */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <Link
@@ -136,6 +163,50 @@ export default function AdminEventsPage() {
                 Delete
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* RSVP List Modal */}
+      {rsvpEventId && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4 shadow-xl max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900">RSVPs</h3>
+              <button
+                data-testid="close-rsvp-modal-btn"
+                onClick={() => setRsvpEventId(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            {rsvpLoading ? (
+              <p className="text-gray-500 text-center py-4">Loading...</p>
+            ) : rsvpList.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">No RSVPs yet.</p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-gray-500 border-b">
+                    <th className="pb-2 font-medium">Name</th>
+                    <th className="pb-2 font-medium">Email</th>
+                    <th className="pb-2 font-medium">Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {rsvpList.map((rsvp) => (
+                    <tr key={rsvp.id}>
+                      <td className="py-2 text-gray-900">{rsvp.name}</td>
+                      <td className="py-2 text-gray-600">{rsvp.email}</td>
+                      <td className="py-2 text-gray-500">
+                        {new Date(rsvp.createdAt).toLocaleDateString("en-CA")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       )}
@@ -218,6 +289,31 @@ export default function AdminEventsPage() {
                 required
               />
             </div>
+            <div>
+              <label htmlFor="event-ticket-url" className="block text-sm font-medium text-gray-700 mb-1">
+                Ticket URL
+              </label>
+              <input
+                id="event-ticket-url"
+                type="url"
+                value={form.ticketUrl}
+                onChange={(e) => setForm({ ...form, ticketUrl: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                placeholder="https://..."
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <input
+                id="event-rsvp"
+                type="checkbox"
+                checked={form.rsvpEnabled}
+                onChange={(e) => setForm({ ...form, rsvpEnabled: e.target.checked })}
+                className="h-4 w-4 text-primary-600 border-gray-300 rounded"
+              />
+              <label htmlFor="event-rsvp" className="text-sm font-medium text-gray-700">
+                Enable RSVP
+              </label>
+            </div>
             <div className="flex gap-3">
               <button
                 type="submit"
@@ -254,6 +350,15 @@ export default function AdminEventsPage() {
               </p>
             </div>
             <div className="flex gap-2">
+              {event.rsvpEnabled && (
+                <button
+                  data-testid="rsvp-btn"
+                  onClick={() => handleViewRsvps(event.id)}
+                  className="text-green-600 hover:text-green-800 text-sm font-medium px-3 py-1"
+                >
+                  RSVPs
+                </button>
+              )}
               <button
                 onClick={() => handleEdit(event)}
                 className="text-primary-600 hover:text-primary-800 text-sm font-medium px-3 py-1"
