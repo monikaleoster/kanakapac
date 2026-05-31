@@ -57,6 +57,28 @@ CREATE TABLE IF NOT EXISTS subscribers (
   subscribed_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Volunteer Roles
+CREATE TABLE IF NOT EXISTS volunteer_roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  max_slots INTEGER,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_volunteer_roles_event_id ON volunteer_roles(event_id);
+
+-- Volunteer Signups
+CREATE TABLE IF NOT EXISTS volunteer_signups (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  role_id UUID NOT NULL REFERENCES volunteer_roles(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_volunteer_signups_role_id ON volunteer_signups(role_id);
+
 -- Settings (Singleton)
 CREATE TABLE IF NOT EXISTS settings (
   id INTEGER PRIMARY KEY DEFAULT 1,

@@ -58,6 +58,31 @@ export interface SchoolSettings {
     meetingTime?: string;
 }
 
+export interface VolunteerRole {
+  id: string;
+  eventId: string;
+  name: string;
+  maxSlots: number | null;
+  createdAt: string;
+}
+
+export interface VolunteerRoleWithCount extends VolunteerRole {
+  signupCount: number;
+  isFull: boolean;
+}
+
+export interface VolunteerSignup {
+  id: string;
+  roleId: string;
+  name: string;
+  email: string;
+  createdAt: string;
+}
+
+export interface VolunteerSignupWithRole extends VolunteerSignup {
+  roleName: string;
+}
+
 export const defaultSettings: SchoolSettings = {
     schoolName: "Kanaka Elementary School",
     pacName: "Kanaka PAC",

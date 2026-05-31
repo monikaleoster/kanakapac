@@ -103,6 +103,43 @@ export function buildEventEmailHtml(
   `;
 }
 
+export function buildVolunteerConfirmationHtml(opts: {
+  volunteerName: string;
+  eventTitle: string;
+  eventDate: string;
+  eventTime: string;
+  roleName: string;
+  pacName: string;
+}): string {
+  const { volunteerName, eventTitle, eventDate, eventTime, roleName, pacName } = opts;
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"></head>
+    <body style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="border-bottom: 3px solid #1e40af; padding-bottom: 16px; margin-bottom: 24px;">
+        <h1 style="color: #1e40af; margin: 0;">${pacName}</h1>
+      </div>
+      <h2 style="color: #111827;">Thanks for volunteering, ${volunteerName}!</h2>
+      <div style="color: #374151; line-height: 1.6;">
+        <p>You have signed up to volunteer at the following event:</p>
+        <div style="background: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;">
+          <p style="margin: 4px 0; font-size: 16px; font-weight: 600;">${eventTitle}</p>
+          <p style="margin: 4px 0;"><strong>Date:</strong> ${eventDate}</p>
+          <p style="margin: 4px 0;"><strong>Time:</strong> ${eventTime}</p>
+          <p style="margin: 4px 0;"><strong>Role:</strong> ${roleName}</p>
+        </div>
+        <p>We'll follow up with more details as the event approaches. Thank you for supporting our school community!</p>
+      </div>
+      <hr style="margin: 32px 0; border: none; border-top: 1px solid #e5e7eb;">
+      <p style="font-size: 12px; color: #6b7280;">
+        This confirmation was sent because you signed up to volunteer with ${pacName}.
+      </p>
+    </body>
+    </html>
+  `;
+}
+
 export function buildWelcomeEmailHtml(unsubscribeUrl: string, pacName: string): string {
   return `
     <!DOCTYPE html>

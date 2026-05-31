@@ -8,6 +8,10 @@ import {
   Subscriber,
   SchoolSettings,
   defaultSettings,
+  VolunteerRole,
+  VolunteerRoleWithCount,
+  VolunteerSignup,
+  VolunteerSignupWithRole,
 } from "./types";
 import { unstable_noStore as noStore } from "next/cache";
 
@@ -524,6 +528,125 @@ export async function getSchoolSettings(): Promise<SchoolSettings> {
     meetingTime: data.meeting_time,
     logoUrl: data.logo_url
   };
+}
+
+// Volunteer Roles
+export async function getVolunteerRolesByEvent(eventId: string): Promise<VolunteerRoleWithCount[]> {
+  const { data, error } = await supabase
+    .from("volunteer_roles")
+    .select("*, volunteer_signups(id)")
+    .eq("event_id", eventId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching volunteer roles:", error);
+    return [];
+  }
+
+  return (data || []).map(item => {
+    const signupCount = Array.isArray(item.volunteer_signups) ? item.volunteer_signups.length : 0;
+    const isFull = item.max_slots !== null && signupCount >= item.max_slots;
+    return {
+      id: item.id,
+      eventId: item.event_id,
+      name: item.name,
+      maxSlots: item.max_slots,
+      createdAt: item.created_at,
+      signupCount,
+      isFull,
+    };
+  });
+}
+
+export async function saveVolunteerRole(role: { id?: string; eventId: string; name: string; maxSlots: number | null }): Promise<VolunteerRole> {
+  const payload = {
+    event_id: role.eventId,
+    name: role.name,
+    max_slots: role.maxSlots,
+  };
+
+  if (role.id) {
+    const { data, error } = await supabase
+      .from("volunteer_roles")
+      .update(payload)
+      .eq("id", role.id)
+      .select()
+      .single();
+    if (error) {
+      console.error("Error updating volunteer role:", error);
+      throw error;
+    }
+    return { id: data.id, eventId: data.event_id, name: data.name, maxSlots: data.max_slots, createdAt: data.created_at };
+  } else {
+    const { data, error } = await supabase
+      .from("volunteer_roles")
+      .insert(payload)
+      .select()
+      .single();
+    if (error) {
+      console.error("Error creating volunteer role:", error);
+      throw error;
+    }
+    return { id: data.id, eventId: data.event_id, name: data.name, maxSlots: data.max_slots, createdAt: data.created_at };
+  }
+}
+
+export async function deleteVolunteerRole(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("volunteer_roles")
+    .delete()
+    .eq("id", id);
+  if (error) {
+    console.error("Error deleting volunteer role:", error);
+    throw error;
+  }
+}
+
+// Volunteer Signups
+export async function createVolunteerSignup(signup: { roleId: string; name: string; email: string }): Promise<VolunteerSignup> {
+  const { data, error } = await supabase
+    .from("volunteer_signups")
+    .insert({ role_id: signup.roleId, name: signup.name, email: signup.email })
+    .select()
+    .single();
+  if (error) {
+    console.error("Error creating volunteer signup:", error);
+    throw error;
+  }
+  return { id: data.id, roleId: data.role_id, name: data.name, email: data.email, createdAt: data.created_at };
+}
+
+export async function deleteVolunteerSignup(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("volunteer_signups")
+    .delete()
+    .eq("id", id);
+  if (error) {
+    console.error("Error deleting volunteer signup:", error);
+    throw error;
+  }
+}
+
+export async function getVolunteerSignupsByEvent(eventId: string): Promise<VolunteerSignupWithRole[]> {
+  const { data, error } = await supabase
+    .from("volunteer_signups")
+    .select("*, volunteer_roles!inner(name, event_id)")
+    .eq("volunteer_roles.event_id", eventId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching volunteer signups:", error);
+    return [];
+  }
+
+  return (data || []).map(item => ({
+    id: item.id,
+    roleId: item.role_id,
+    name: item.name,
+    email: item.email,
+    createdAt: item.created_at,
+    roleName: item.volunteer_roles.name,
+  }));
 }
 
 export async function saveSchoolSettings(settings: SchoolSettings): Promise<void> {

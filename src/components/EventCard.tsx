@@ -1,8 +1,10 @@
+import Link from "next/link";
 import { Event } from "@/lib/types";
 import { formatDate, formatTime } from "@/lib/format";
 
 export default function EventCard({ event }: { event: Event }) {
   return (
+    <Link href={`/events/${event.id}`} className="block">
     <div className="bg-white rounded-lg shadow-md border border-gray-100 p-6 hover:shadow-lg transition-shadow">
       <div className="flex items-start justify-between">
         <div className="flex-1">
@@ -65,5 +67,6 @@ export default function EventCard({ event }: { event: Event }) {
         </div>
       </div>
     </div>
+    </Link>
   );
 }
