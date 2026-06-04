@@ -182,9 +182,9 @@ export default function AdminEventsPage() {
               </button>
             </div>
             {rsvpLoading ? (
-              <p className="text-gray-500 text-center py-4">Loading...</p>
+              <p data-testid="rsvp-list-loading" className="text-gray-500 text-center py-4">Loading...</p>
             ) : rsvpList.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">No RSVPs yet.</p>
+              <p data-testid="rsvp-list-empty" className="text-gray-500 text-center py-4">No RSVPs yet.</p>
             ) : (
               <table className="w-full text-sm">
                 <thead>

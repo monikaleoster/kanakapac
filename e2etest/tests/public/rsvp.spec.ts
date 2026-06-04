@@ -23,10 +23,14 @@ async function createEventAndGetUrl(
     ticketUrl: data.ticketUrl,
   });
   await adminPage.submitBtn.click();
-  await adminPage.page.waitForLoadState('networkidle');
+  // Wait for the event to appear in the admin list — confirms creation succeeded
+  await adminPage.page.getByText(data.title).first().waitFor({ state: 'visible', timeout: 10000 });
 
   // Find the event via the public events API to get its ID
   const res = await adminPage.page.request.get('/api/events');
+  if (!res.ok()) {
+    throw new Error(`GET /api/events returned ${res.status()} — admin session may have expired`);
+  }
   const events: { id: string; title: string }[] = await res.json();
   const event = events.find((e) => e.title === data.title);
   if (!event) throw new Error(`Event "${data.title}" not found after creation`);
@@ -34,7 +38,7 @@ async function createEventAndGetUrl(
 }
 
 test.describe('WF-PUB-RSVP: Event RSVP', () => {
-  test('happy path — RSVP form submits and shows success', async ({ page, browser }) => {
+  test('happy path — RSVP modal submits and shows success', async ({ page, browser }) => {
     // Create the event via admin (needs auth)
     const adminContext = await browser.newContext({ storageState: 'tests/.auth/admin.json' });
     const adminPage = new AdminEventsPage(adminContext.newPage ? await adminContext.newPage() : page);
@@ -48,7 +52,7 @@ test.describe('WF-PUB-RSVP: Event RSVP', () => {
     await page.goto(eventUrl);
     const rsvpPage = new RsvpPage(page);
 
-    await expect(rsvpPage.submitBtn).toBeVisible();
+    await expect(rsvpPage.goingBtn).toBeVisible();
     await rsvpPage.fillAndSubmit('Test Parent', `rsvp-happy-${Date.now()}@example.com`);
     await expect(rsvpPage.successMsg).toBeVisible({ timeout: 8000 });
   });
@@ -70,8 +74,8 @@ test.describe('WF-PUB-RSVP: Event RSVP', () => {
     await rsvpPage.fillAndSubmit('Test Parent', email);
     await expect(rsvpPage.successMsg).toBeVisible({ timeout: 8000 });
 
-    // Second RSVP with same email
-    await page.goto(eventUrl);
+    // Second RSVP with same email — reload page and try again
+    await page.reload();
     await rsvpPage.fillAndSubmit('Test Parent', email);
     await expect(rsvpPage.duplicateMsg).toBeVisible({ timeout: 8000 });
   });
@@ -92,7 +96,7 @@ test.describe('WF-PUB-RSVP: Event RSVP', () => {
     await expect(ticketBtn).toHaveAttribute('target', '_blank');
   });
 
-  test('edge case — RSVP form not shown when rsvpEnabled is false', async ({ page, browser }) => {
+  test('edge case — Going button not shown when rsvpEnabled is false', async ({ page, browser }) => {
     const adminContext = await browser.newContext({ storageState: 'tests/.auth/admin.json' });
     const adminPage = new AdminEventsPage(adminContext.newPage ? await adminContext.newPage() : page);
     const eventUrl = await createEventAndGetUrl(adminPage, {
@@ -101,6 +105,6 @@ test.describe('WF-PUB-RSVP: Event RSVP', () => {
     await adminContext.close();
 
     await page.goto(eventUrl);
-    await expect(page.getByRole('button', { name: /rsvp now/i })).not.toBeVisible();
+    await expect(page.getByRole('button', { name: /going/i })).not.toBeVisible();
   });
 });

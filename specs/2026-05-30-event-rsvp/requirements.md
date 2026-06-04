@@ -129,3 +129,50 @@ export interface Rsvp {
 - No new npm packages required. All data access goes through `src/lib/data.ts`.
 - Tailwind only for styling — no new CSS files.
 - Keep the `rsvpEnabled` default as `false` so existing events are unaffected.
+
+---
+
+## Updates — 2026-05-31
+
+The following changes were agreed before implementation began. They supersede the original decisions above where there is a conflict.
+
+### 1. "Going" button on event cards (not just detail page)
+
+The original spec placed the RSVP form only on the event detail page (`/events/[id]`). The updated flow puts a **"Going →"** button directly on every event card so users never need to open the event to RSVP.
+
+**Surfaces that show the button:**
+- Events listing page (`/events`) — on each upcoming event card
+- Homepage upcoming events section — on each event card
+- Event detail page (`/events/[id]`) — replaces the inline RSVP form
+
+The button is only rendered when `rsvpEnabled = true` on the event.
+
+### 2. RSVP count display — only shown when ≥ 1
+
+Each event card and detail page shows how many people have marked "Going" to motivate others. The count is fetched as part of the events data (not a separate request).
+
+**Rule:** The count is **hidden entirely when it is 0**. Showing "0 people going" is demotivating and must not appear. The count only renders when `rsvpCount >= 1`.
+
+### 3. Modal popup for RSVP form
+
+Clicking "Going →" opens a **small modal/popup** over the current page. No navigation occurs. The modal contains the RSVP form (see §4 below). This replaces the inline form that was previously on the detail page.
+
+### 4. Email is now optional
+
+Original spec: `name` required, `email` required.  
+Updated spec: `name` required, `email` **optional**.
+
+- The `email` column in the `rsvps` table must be nullable.
+- The unique constraint `(event_id, email)` still applies when an email is provided, preventing duplicate registrations from the same address. Multiple anonymous (no-email) RSVPs are allowed.
+- The API (`POST /api/rsvp`) validates only that `eventId` and `name` are present. `email` is accepted but not required.
+- The form label reads "Email (optional)" with placeholder "For event updates".
+
+### 5. Data model change — `rsvpCount` on events
+
+`GET /api/events` response now includes `rsvpCount: number` per event. This avoids a second per-event request on pages that show multiple cards. The count is derived by joining `rsvps` at query time.
+
+The `Event` TypeScript interface gains:
+
+```ts
+rsvpCount: number;   // 0 when no RSVPs; used to conditionally show the count badge
+```

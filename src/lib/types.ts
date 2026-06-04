@@ -7,6 +7,7 @@ export interface Event {
     description: string;
     rsvpEnabled: boolean;
     ticketUrl?: string;
+    rsvpCount: number;
     createdAt: string;
 }
 
@@ -14,7 +15,7 @@ export interface Rsvp {
     id: string;
     eventId: string;
     name: string;
-    email: string;
+    email?: string;
     createdAt: string;
 }
 

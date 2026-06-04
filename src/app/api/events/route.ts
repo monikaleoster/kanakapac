@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
     description: body.description,
     rsvpEnabled: body.rsvpEnabled ?? false,
     ticketUrl: body.ticketUrl || undefined,
+    rsvpCount: 0,
     createdAt: body.createdAt || new Date().toISOString(),
   };
 

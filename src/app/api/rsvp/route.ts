@@ -6,11 +6,11 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const { eventId, name, email } = body;
 
-  if (!eventId || !name || !email) {
+  if (!eventId || !name) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  const result = await saveRsvp({ eventId, name, email });
+  const result = await saveRsvp({ eventId, name, email: email || undefined });
 
   if (result.error === "duplicate") {
     return NextResponse.json({ error: "Already registered" }, { status: 409 });

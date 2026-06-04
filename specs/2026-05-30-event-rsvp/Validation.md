@@ -102,3 +102,34 @@ The feature is ready to merge when **all** of the following are true:
 5. The PR diff does not include unrelated changes (no leftover debug code, no `.env` files, no migration of other features)
 
 > **Reviewer note:** Pay particular attention to the `saveEvent()` function in `data.ts` — confirm `rsvpEnabled` defaults to `false` in the Supabase upsert so existing events without the field are not accidentally set to enabled.
+
+---
+
+## Updates — 2026-05-31
+
+Additional validation criteria for the changes recorded in `requirements.md § Updates`. All items below are **required** in addition to the original checklist.
+
+### Group 0 — Database (revised)
+
+- [ ] `rsvps.email` column is nullable — confirm in Supabase SQL editor: `\d rsvps` shows `email text` (no `NOT NULL`)
+- [ ] Migration `20260531000001_rsvp_email_optional.sql` applied cleanly
+
+### Group 1 — API (revised)
+
+- [ ] `POST /api/rsvp` with `{ eventId, name }` (no email) returns `201` and row appears in `rsvps` with `email = null`
+- [ ] `POST /api/rsvp` with `{ eventId, name, email }` still returns `201` (email still accepted when provided)
+- [ ] `POST /api/rsvp` with missing `name` (but email present) returns `400`
+- [ ] `GET /api/events` response includes `rsvpCount` field on each event object
+
+### Group 4 — Public UI (revised)
+
+- [ ] On `/events`, an RSVP-enabled event card shows a **"Going →"** button
+- [ ] Clicking "Going →" opens a modal — **page does not navigate**
+- [ ] Modal has `name` field (required) and `email` field labelled "Email (optional)"
+- [ ] Submitting with only a name (no email) succeeds and shows "You're going! See you there."
+- [ ] Submitting same email twice for same event shows "You've already marked yourself as going."
+- [ ] After RSVP, the card count badge increments (on next page load or if count is live-updated)
+- [ ] **Count badge is hidden when rsvpCount = 0** — no "0 people going" text appears anywhere
+- [ ] When rsvpCount ≥ 1, the count badge shows correctly on: event card (listing), event card (homepage), event detail page
+- [ ] Event cards without `rsvpEnabled` show no "Going" button and no count badge
+- [ ] Clicking anywhere else on the event card (not the button) still navigates to `/events/[id]`

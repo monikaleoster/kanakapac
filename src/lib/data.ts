@@ -12,8 +12,30 @@ import {
 } from "./types";
 import { unstable_noStore as noStore } from "next/cache";
 
-// Helper for snake_case to camelCase conversion if needed, 
-// but I'll try to select columns to match the types.
+async function getRsvpCountMap(eventIds: string[]): Promise<Map<string, number>> {
+  if (eventIds.length === 0) return new Map();
+  const { data } = await supabase.from("rsvps").select("event_id").in("event_id", eventIds);
+  const map = new Map<string, number>();
+  for (const row of data ?? []) {
+    map.set(row.event_id, (map.get(row.event_id) ?? 0) + 1);
+  }
+  return map;
+}
+
+function mapEvent(item: Record<string, unknown>, rsvpCount = 0): Event {
+  return {
+    id: item.id as string,
+    title: item.title as string,
+    date: item.date as string,
+    time: item.time as string,
+    location: item.location as string,
+    description: item.description as string,
+    rsvpEnabled: (item.rsvp_enabled as boolean) ?? false,
+    ticketUrl: (item.ticket_url as string) ?? undefined,
+    rsvpCount,
+    createdAt: item.created_at as string,
+  };
+}
 
 // Events
 export async function getEvents(): Promise<Event[]> {
@@ -28,17 +50,8 @@ export async function getEvents(): Promise<Event[]> {
     return [];
   }
 
-  return (data || []).map(item => ({
-    id: item.id,
-    title: item.title,
-    date: item.date,
-    time: item.time,
-    location: item.location,
-    description: item.description,
-    rsvpEnabled: item.rsvp_enabled ?? false,
-    ticketUrl: item.ticket_url ?? undefined,
-    createdAt: item.created_at
-  }));
+  const counts = await getRsvpCountMap((data || []).map(e => e.id));
+  return (data || []).map(item => mapEvent(item, counts.get(item.id) ?? 0));
 }
 
 export async function getUpcomingEvents(): Promise<Event[]> {
@@ -55,17 +68,8 @@ export async function getUpcomingEvents(): Promise<Event[]> {
     return [];
   }
 
-  return (data || []).map(item => ({
-    id: item.id,
-    title: item.title,
-    date: item.date,
-    time: item.time,
-    location: item.location,
-    description: item.description,
-    rsvpEnabled: item.rsvp_enabled ?? false,
-    ticketUrl: item.ticket_url ?? undefined,
-    createdAt: item.created_at
-  }));
+  const counts = await getRsvpCountMap((data || []).map(e => e.id));
+  return (data || []).map(item => mapEvent(item, counts.get(item.id) ?? 0));
 }
 
 export async function getPastEvents(): Promise<Event[]> {
@@ -82,43 +86,23 @@ export async function getPastEvents(): Promise<Event[]> {
     return [];
   }
 
-  return (data || []).map(item => ({
-    id: item.id,
-    title: item.title,
-    date: item.date,
-    time: item.time,
-    location: item.location,
-    description: item.description,
-    rsvpEnabled: item.rsvp_enabled ?? false,
-    ticketUrl: item.ticket_url ?? undefined,
-    createdAt: item.created_at
-  }));
+  const counts = await getRsvpCountMap((data || []).map(e => e.id));
+  return (data || []).map(item => mapEvent(item, counts.get(item.id) ?? 0));
 }
 
 export async function getEventById(id: string): Promise<Event | undefined> {
   noStore();
-  const { data, error } = await supabase
-    .from("events")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const [{ data, error }, counts] = await Promise.all([
+    supabase.from("events").select("*").eq("id", id).single(),
+    getRsvpCountMap([id]),
+  ]);
 
   if (error) {
     console.error(`Error fetching event ${id}:`, error);
     return undefined;
   }
 
-  return data ? {
-    id: data.id,
-    title: data.title,
-    date: data.date,
-    time: data.time,
-    location: data.location,
-    description: data.description,
-    rsvpEnabled: data.rsvp_enabled ?? false,
-    ticketUrl: data.ticket_url ?? undefined,
-    createdAt: data.created_at
-  } : undefined;
+  return data ? mapEvent(data, counts.get(id) ?? 0) : undefined;
 }
 
 export async function saveEvent(event: Event): Promise<void> {
@@ -162,7 +146,7 @@ export async function saveRsvp(rsvp: Omit<Rsvp, 'id' | 'createdAt'>): Promise<{ 
     .insert({
       event_id: rsvp.eventId,
       name: rsvp.name,
-      email: rsvp.email,
+      email: rsvp.email ?? null,
     });
 
   if (error) {

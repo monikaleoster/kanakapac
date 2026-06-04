@@ -1,6 +1,6 @@
 import { getEventById } from "@/lib/data";
 import { formatDate, formatTime } from "@/lib/format";
-import RsvpForm from "@/components/RsvpForm";
+import EventDetailRsvp from "@/components/EventDetailRsvp";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 
@@ -62,9 +62,11 @@ export default async function EventDetailPage({
         )}
 
         {event.rsvpEnabled && (
-          <div className="mt-8 border-t border-gray-100 pt-8">
-            <RsvpForm eventId={event.id} />
-          </div>
+          <EventDetailRsvp
+            eventId={event.id}
+            eventTitle={event.title}
+            rsvpCount={event.rsvpCount}
+          />
         )}
       </div>
     </div>
