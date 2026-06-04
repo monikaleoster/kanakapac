@@ -91,10 +91,14 @@ test.describe('WF-PUB-09: Newsletter Subscribe', () => {
     const successMsg = page.getByText(/subscribed|success/i);
     await expect(successMsg).toBeVisible({ timeout: 8000 });
 
-    // Subscribe again
-    await emailInput.fill('duplicate@example.com');
-    await subscribeBtn.click();
-    await expect(successMsg).toBeVisible({ timeout: 8000 });
+    // Subscribe again — reload to reset the form (form is replaced by success msg after first submit)
+    await page.goto('/');
+    const emailInput2 = page.locator('input[type="email"]').last();
+    const subscribeBtn2 = page.getByRole('button', { name: /subscribe/i }).last();
+    const successMsg2 = page.getByText(/subscribed|success/i);
+    await emailInput2.fill('duplicate@example.com');
+    await subscribeBtn2.click();
+    await expect(successMsg2).toBeVisible({ timeout: 8000 });
   });
 
   test('edge case — server error shows error message', async ({ page }) => {

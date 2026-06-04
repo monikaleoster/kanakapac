@@ -9,6 +9,8 @@ const mockEvent: Event = {
     time: '09:00',
     location: 'School Gym',
     description: 'Annual fair with games and food.',
+    rsvpEnabled: false,
+    rsvpCount: 0,
     createdAt: '2026-01-01T00:00:00Z',
 };
 

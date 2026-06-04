@@ -65,7 +65,7 @@ test.describe('WF-ADM-04: Events — Edit', () => {
 
     await editBtns.first().click();
 
-    const updatedTitle = 'Updated E2E Event';
+    const updatedTitle = `Updated E2E Event ${Date.now()}`;
     await eventsPage.titleInput.fill(updatedTitle);
     await eventsPage.submitBtn.click();
 
@@ -89,19 +89,86 @@ test.describe('WF-ADM-04: Events — Edit', () => {
 
   test('edge case — clicking edit on second event resets form to that event', async ({ page }) => {
     const eventsPage = new AdminEventsPage(page);
+    const ts = Date.now();
+    const titleA = `Edit Test A ${ts}`;
+    const titleB = `Edit Test B ${ts}`;
+
+    // Create two events with known different titles so the test is self-contained
+    for (const title of [titleA, titleB]) {
+      await eventsPage.goto();
+      await eventsPage.newEventBtn.click();
+      await eventsPage.fillEventForm({ ...TEST_EVENT, title });
+      await eventsPage.submitBtn.click();
+      await page.getByText(title).first().waitFor({ state: 'visible', timeout: 8000 });
+    }
+
     await eventsPage.goto();
 
-    const editBtns = eventsPage.getEditBtns();
-    const count = await editBtns.count();
-    if (count < 2) test.skip();
-
-    await editBtns.first().click();
+    const rowA = page.locator('div')
+      .filter({ has: page.getByRole('heading', { name: titleA }) })
+      .filter({ has: page.getByRole('button', { name: /edit/i }) })
+      .last();
+    await rowA.getByRole('button', { name: /edit/i }).click();
     const firstTitle = await eventsPage.titleInput.inputValue();
 
-    await editBtns.nth(1).click();
+    const rowB = page.locator('div')
+      .filter({ has: page.getByRole('heading', { name: titleB }) })
+      .filter({ has: page.getByRole('button', { name: /edit/i }) })
+      .last();
+    await rowB.getByRole('button', { name: /edit/i }).click();
     const secondTitle = await eventsPage.titleInput.inputValue();
 
     expect(firstTitle).not.toBe(secondTitle);
+  });
+});
+
+test.describe('WF-ADM-06: Events — RSVP', () => {
+  test('happy path — create event with RSVP enabled and ticket URL', async ({ page }) => {
+    const eventsPage = new AdminEventsPage(page);
+    await eventsPage.goto();
+
+    const title = `RSVP+Ticket Event ${Date.now()}`;
+    await eventsPage.newEventBtn.click();
+    await eventsPage.fillEventForm({
+      ...TEST_EVENT,
+      title,
+      rsvpEnabled: true,
+      ticketUrl: 'https://example.com/tickets',
+    });
+    await eventsPage.submitBtn.click();
+
+    await expect(page.getByText(title).first()).toBeVisible({ timeout: 8000 });
+
+    // Edit to verify fields were saved
+    const targetRow = page.locator('div')
+      .filter({ has: page.getByRole('heading', { name: title }) })
+      .filter({ has: page.getByRole('button', { name: /edit/i }) })
+      .last();
+    await targetRow.getByRole('button', { name: /edit/i }).click();
+
+    await expect(eventsPage.rsvpCheckbox).toBeChecked();
+    await expect(eventsPage.ticketUrlInput).toHaveValue('https://example.com/tickets');
+  });
+
+  test('happy path — admin can view RSVP list for event', async ({ page }) => {
+    const eventsPage = new AdminEventsPage(page);
+    await eventsPage.goto();
+
+    // Find an event with RSVP enabled (RSVPs button visible)
+    const rsvpBtns = eventsPage.getRsvpBtns();
+    const count = await rsvpBtns.count();
+    if (count === 0) test.skip();
+
+    await rsvpBtns.first().click();
+
+    // Modal should appear, then loading resolves to either table or empty state
+    await expect(page.getByTestId('close-rsvp-modal-btn')).toBeVisible({ timeout: 5000 });
+    await expect(
+      page.getByRole('table').or(page.getByTestId('rsvp-list-empty'))
+    ).toBeVisible({ timeout: 8000 });
+
+    await page.getByTestId('close-rsvp-modal-btn').click();
+    await expect(page.getByTestId('close-rsvp-modal-btn')).not.toBeVisible();
   });
 });
 

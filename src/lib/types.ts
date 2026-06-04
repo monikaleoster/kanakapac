@@ -5,6 +5,17 @@ export interface Event {
     time: string;
     location: string;
     description: string;
+    rsvpEnabled: boolean;
+    ticketUrl?: string;
+    rsvpCount: number;
+    createdAt: string;
+}
+
+export interface Rsvp {
+    id: string;
+    eventId: string;
+    name: string;
+    email?: string;
     createdAt: string;
 }
 

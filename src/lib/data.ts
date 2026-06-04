@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import {
   Event,
+  Rsvp,
   Minutes,
   Announcement,
   Policy,
@@ -11,11 +12,34 @@ import {
 } from "./types";
 import { unstable_noStore as noStore } from "next/cache";
 
-// Helper for snake_case to camelCase conversion if needed, 
-// but I'll try to select columns to match the types.
+async function getRsvpCountMap(eventIds: string[]): Promise<Map<string, number>> {
+  if (eventIds.length === 0) return new Map();
+  const { data } = await supabase.from("rsvps").select("event_id").in("event_id", eventIds);
+  const map = new Map<string, number>();
+  for (const row of data ?? []) {
+    map.set(row.event_id, (map.get(row.event_id) ?? 0) + 1);
+  }
+  return map;
+}
+
+function mapEvent(item: Record<string, unknown>, rsvpCount = 0): Event {
+  return {
+    id: item.id as string,
+    title: item.title as string,
+    date: item.date as string,
+    time: item.time as string,
+    location: item.location as string,
+    description: item.description as string,
+    rsvpEnabled: (item.rsvp_enabled as boolean) ?? false,
+    ticketUrl: (item.ticket_url as string) ?? undefined,
+    rsvpCount,
+    createdAt: item.created_at as string,
+  };
+}
 
 // Events
 export async function getEvents(): Promise<Event[]> {
+  noStore();
   const { data, error } = await supabase
     .from("events")
     .select("*")
@@ -26,18 +50,12 @@ export async function getEvents(): Promise<Event[]> {
     return [];
   }
 
-  return (data || []).map(item => ({
-    id: item.id,
-    title: item.title,
-    date: item.date,
-    time: item.time,
-    location: item.location,
-    description: item.description,
-    createdAt: item.created_at
-  }));
+  const counts = await getRsvpCountMap((data || []).map(e => e.id));
+  return (data || []).map(item => mapEvent(item, counts.get(item.id) ?? 0));
 }
 
 export async function getUpcomingEvents(): Promise<Event[]> {
+  noStore();
   const now = new Date().toISOString().split('T')[0];
   const { data, error } = await supabase
     .from("events")
@@ -50,18 +68,12 @@ export async function getUpcomingEvents(): Promise<Event[]> {
     return [];
   }
 
-  return (data || []).map(item => ({
-    id: item.id,
-    title: item.title,
-    date: item.date,
-    time: item.time,
-    location: item.location,
-    description: item.description,
-    createdAt: item.created_at
-  }));
+  const counts = await getRsvpCountMap((data || []).map(e => e.id));
+  return (data || []).map(item => mapEvent(item, counts.get(item.id) ?? 0));
 }
 
 export async function getPastEvents(): Promise<Event[]> {
+  noStore();
   const now = new Date().toISOString().split('T')[0];
   const { data, error } = await supabase
     .from("events")
@@ -74,38 +86,23 @@ export async function getPastEvents(): Promise<Event[]> {
     return [];
   }
 
-  return (data || []).map(item => ({
-    id: item.id,
-    title: item.title,
-    date: item.date,
-    time: item.time,
-    location: item.location,
-    description: item.description,
-    createdAt: item.created_at
-  }));
+  const counts = await getRsvpCountMap((data || []).map(e => e.id));
+  return (data || []).map(item => mapEvent(item, counts.get(item.id) ?? 0));
 }
 
 export async function getEventById(id: string): Promise<Event | undefined> {
-  const { data, error } = await supabase
-    .from("events")
-    .select("*")
-    .eq("id", id)
-    .single();
+  noStore();
+  const [{ data, error }, counts] = await Promise.all([
+    supabase.from("events").select("*").eq("id", id).single(),
+    getRsvpCountMap([id]),
+  ]);
 
   if (error) {
     console.error(`Error fetching event ${id}:`, error);
     return undefined;
   }
 
-  return data ? {
-    id: data.id,
-    title: data.title,
-    date: data.date,
-    time: data.time,
-    location: data.location,
-    description: data.description,
-    createdAt: data.created_at
-  } : undefined;
+  return data ? mapEvent(data, counts.get(id) ?? 0) : undefined;
 }
 
 export async function saveEvent(event: Event): Promise<void> {
@@ -115,6 +112,8 @@ export async function saveEvent(event: Event): Promise<void> {
     time: event.time,
     location: event.location,
     description: event.description,
+    rsvp_enabled: event.rsvpEnabled ?? false,
+    ticket_url: event.ticketUrl || null,
     created_at: event.createdAt || new Date().toISOString()
   };
 
@@ -140,8 +139,52 @@ export async function deleteEvent(id: string): Promise<void> {
   }
 }
 
+// RSVPs
+export async function saveRsvp(rsvp: Omit<Rsvp, 'id' | 'createdAt'>): Promise<{ error?: string }> {
+  const { error } = await supabase
+    .from("rsvps")
+    .insert({
+      event_id: rsvp.eventId,
+      name: rsvp.name,
+      email: rsvp.email ?? null,
+    });
+
+  if (error) {
+    if (error.code === '23505') {
+      return { error: 'duplicate' };
+    }
+    console.error("Error saving RSVP:", error);
+    return { error: 'unknown' };
+  }
+
+  return {};
+}
+
+export async function getRsvpsByEvent(eventId: string): Promise<Rsvp[]> {
+  noStore();
+  const { data, error } = await supabase
+    .from("rsvps")
+    .select("*")
+    .eq("event_id", eventId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error(`Error fetching RSVPs for event ${eventId}:`, error);
+    return [];
+  }
+
+  return (data || []).map(item => ({
+    id: item.id,
+    eventId: item.event_id,
+    name: item.name,
+    email: item.email,
+    createdAt: item.created_at,
+  }));
+}
+
 // Minutes
 export async function getMinutes(): Promise<Minutes[]> {
+  noStore();
   const { data, error } = await supabase
     .from("minutes")
     .select("*")
@@ -162,6 +205,7 @@ export async function getMinutes(): Promise<Minutes[]> {
 }
 
 export async function getMinutesById(id: string): Promise<Minutes | undefined> {
+  noStore();
   const { data, error } = await supabase
     .from("minutes")
     .select("*")
@@ -214,6 +258,7 @@ export async function deleteMinutes(id: string): Promise<void> {
 
 // Announcements
 export async function getAnnouncements(): Promise<Announcement[]> {
+  noStore();
   const { data, error } = await supabase
     .from("announcements")
     .select("*")
@@ -235,6 +280,7 @@ export async function getAnnouncements(): Promise<Announcement[]> {
 }
 
 export async function getActiveAnnouncements(): Promise<Announcement[]> {
+  noStore();
   const now = new Date().toISOString();
   const { data, error } = await supabase
     .from("announcements")
@@ -258,6 +304,7 @@ export async function getActiveAnnouncements(): Promise<Announcement[]> {
 }
 
 export async function getAnnouncementById(id: string): Promise<Announcement | undefined> {
+  noStore();
   const { data, error } = await supabase
     .from("announcements")
     .select("*")
@@ -312,6 +359,7 @@ export async function deleteAnnouncement(id: string): Promise<void> {
 
 // Policies
 export async function getPolicies(): Promise<Policy[]> {
+  noStore();
   const { data, error } = await supabase
     .from("policies")
     .select("*")
@@ -332,6 +380,7 @@ export async function getPolicies(): Promise<Policy[]> {
 }
 
 export async function getPolicyById(id: string): Promise<Policy | undefined> {
+  noStore();
   const { data, error } = await supabase
     .from("policies")
     .select("*")
@@ -384,6 +433,7 @@ export async function deletePolicy(id: string): Promise<void> {
 
 // Team Members
 export async function getTeamMembers(): Promise<TeamMember[]> {
+  noStore();
   const { data, error } = await supabase
     .from("team_members")
     .select("*")
@@ -405,6 +455,7 @@ export async function getTeamMembers(): Promise<TeamMember[]> {
 }
 
 export async function getTeamMemberById(id: string): Promise<TeamMember | undefined> {
+  noStore();
   const { data, error } = await supabase
     .from("team_members")
     .select("*")
@@ -459,6 +510,7 @@ export async function deleteTeamMember(id: string): Promise<void> {
 
 // Subscribers
 export async function getSubscribers(): Promise<Subscriber[]> {
+  noStore();
   const { data, error } = await supabase
     .from("subscribers")
     .select("*")

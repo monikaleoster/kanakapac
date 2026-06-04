@@ -67,6 +67,8 @@ describe('data.ts lib unit tests', () => {
                 time: '12:00',
                 location: 'New Loc',
                 description: 'New Desc',
+                rsvpEnabled: false,
+                rsvpCount: 0,
                 createdAt: '2026-01-01T00:00:00Z'
             };
             (supabase.from('events') as any).upsert.mockResolvedValue({ error: null });
