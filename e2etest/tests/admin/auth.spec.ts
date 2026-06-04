@@ -67,8 +67,12 @@ test.describe('WF-ADM-02: Admin Logout', () => {
     await dashboard.signOut();
     await expect(page).toHaveURL(/\/admin/);
 
-    // Navigating to a protected route after logout should redirect to login
-    await page.goto('/admin/dashboard');
+    // Navigating to a protected route after logout should redirect to login.
+    // Use Promise.all to handle the server-side redirect without ERR_ABORTED.
+    await Promise.all([
+      page.waitForURL(/\/admin/),
+      page.goto('/admin/dashboard'),
+    ]);
     await expect(page).toHaveURL(/\/admin/);
   });
 });
