@@ -1,10 +1,13 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
-// Vercel generates the preview URL dynamically; NextAuth requires NEXTAUTH_URL to be a valid URL.
-// Fall back to VERCEL_URL (injected automatically by Vercel) so builds don't crash.
-if (!process.env.NEXTAUTH_URL && process.env.VERCEL_URL) {
-  process.env.NEXTAUTH_URL = `https://${process.env.VERCEL_URL}`;
+// Ensure NEXTAUTH_URL is always a valid URL at build time.
+// VERCEL_URL is injected by Vercel at runtime; during CI builds it may be absent,
+// so fall back to localhost to prevent new URL('') from crashing static generation.
+if (!process.env.NEXTAUTH_URL) {
+  process.env.NEXTAUTH_URL = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : 'http://localhost:3000';
 }
 
 export const authOptions: NextAuthOptions = {
