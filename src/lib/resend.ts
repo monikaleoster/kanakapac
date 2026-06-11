@@ -22,6 +22,7 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions) {
   const { data, error } = await resend.emails.send({
     from: FROM_EMAIL,
     to: Array.isArray(to) ? to : [to],
+    replyTo: 'kcpactreasurer@gmail.com',
     subject,
     html,
   });
