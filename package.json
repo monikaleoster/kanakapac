@@ -12,6 +12,10 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.97.0",
+    "@tiptap/extension-image": "^3.31.3",
+    "@tiptap/pm": "^3.31.3",
+    "@tiptap/react": "^3.31.3",
+    "@tiptap/starter-kit": "^3.31.3",
     "isomorphic-dompurify": "^2.36.0",
     "next": "^14.2.0",
     "next-auth": "^4.24.13",
@@ -22,6 +26,7 @@
     "uuid": "^9.0.0"
   },
   "devDependencies": {
+    "@tailwindcss/typography": "^0.5.20",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
