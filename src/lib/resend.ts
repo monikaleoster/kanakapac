@@ -114,6 +114,8 @@ export function buildArticleEmailHtml(
   pacName: string
 ): string {
   const safeBody = sanitizeHtml(body);
+  const safeTitle = escapeHtml(title);
+  const safeAuthor = escapeHtml(author);
 
   return `
     <!DOCTYPE html>
@@ -123,8 +125,8 @@ export function buildArticleEmailHtml(
       <div style="border-bottom: 3px solid #1e40af; padding-bottom: 16px; margin-bottom: 24px;">
         <h1 style="color: #1e40af; margin: 0;">${pacName}</h1>
       </div>
-      <h2 style="color: #111827;">${title}</h2>
-      <p style="color: #6b7280; font-size: 14px; margin-top: -8px;">By ${author}</p>
+      <h2 style="color: #111827;">${safeTitle}</h2>
+      <p style="color: #6b7280; font-size: 14px; margin-top: -8px;">By ${safeAuthor}</p>
       <div style="color: #374151; line-height: 1.6;">
         ${safeBody}
       </div>

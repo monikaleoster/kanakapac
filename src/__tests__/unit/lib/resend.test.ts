@@ -66,4 +66,18 @@ describe('buildArticleEmailHtml', () => {
         expect(html).not.toContain('<script>');
         expect(html).not.toContain('onerror');
     });
+
+    it('escapes HTML in the title and author', () => {
+        const html = buildArticleEmailHtml(
+            '<script>alert(1)</script>',
+            '<img src=x onerror="alert(1)">',
+            '<p>Body</p>',
+            'https://example.com/unsubscribe',
+            'Kanaka PAC'
+        );
+
+        expect(html).not.toContain('<script>alert(1)</script>');
+        expect(html).not.toContain('<img src=x onerror="alert(1)">');
+        expect(html).toContain('&lt;script&gt;');
+    });
 });

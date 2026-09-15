@@ -72,8 +72,29 @@ export default function AdminArticlesPage() {
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function notifySubscribersIfConfirmed(article: Article) {
+    const shouldNotify = confirm(
+      "Article published! Would you like to email this to all subscribers?"
+    );
+    if (shouldNotify) {
+      await fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "article",
+          subject: `New Article: ${article.title}`,
+          title: article.title,
+          author: article.author,
+          content: article.body,
+        }),
+      });
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const submitter = (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+    const publishing = submitter?.value === "publish";
     setSaving(true);
 
     try {
@@ -83,23 +104,37 @@ export default function AdminArticlesPage() {
       };
 
       if (editing) {
+        const updated: Article = {
+          ...editing,
+          ...payload,
+          ...(publishing ? { status: "published" as const } : {}),
+        };
         await fetch("/api/articles", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...editing, ...payload }),
+          body: JSON.stringify(updated),
         });
+
+        setShowForm(false);
+        setEditing(null);
+        setForm(emptyForm);
+        await fetchArticles();
+
+        if (publishing) {
+          await notifySubscribersIfConfirmed(updated);
+        }
       } else {
         await fetch("/api/articles", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...payload, status: "draft" }),
         });
-      }
 
-      setShowForm(false);
-      setEditing(null);
-      setForm(emptyForm);
-      fetchArticles();
+        setShowForm(false);
+        setEditing(null);
+        setForm(emptyForm);
+        fetchArticles();
+      }
     } finally {
       setSaving(false);
     }
@@ -120,22 +155,7 @@ export default function AdminArticlesPage() {
       setForm(emptyForm);
       await fetchArticles();
 
-      const shouldNotify = confirm(
-        "Article published! Would you like to email this to all subscribers?"
-      );
-      if (shouldNotify) {
-        await fetch("/api/send-email", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type: "article",
-            subject: `New Article: ${published.title}`,
-            title: published.title,
-            author: published.author,
-            content: published.body,
-          }),
-        });
-      }
+      await notifySubscribersIfConfirmed(published);
     } finally {
       setSaving(false);
     }
@@ -302,15 +322,10 @@ export default function AdminArticlesPage() {
               </button>
               {editing?.status === "draft" && (
                 <button
-                  type="button"
+                  type="submit"
+                  name="intent"
+                  value="publish"
                   disabled={saving}
-                  onClick={() =>
-                    handlePublish({
-                      ...editing,
-                      ...form,
-                      coverImageUrl: form.coverImageUrl || undefined,
-                    })
-                  }
                   className="bg-green-600 text-white px-4 py-2 rounded-md font-medium hover:bg-green-700 disabled:opacity-50"
                 >
                   Publish
