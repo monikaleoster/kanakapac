@@ -1,4 +1,4 @@
-import { buildContactEmailHtml, buildContactConfirmationHtml } from '@/lib/resend';
+import { buildContactEmailHtml, buildContactConfirmationHtml, buildArticleEmailHtml } from '@/lib/resend';
 
 describe('buildContactEmailHtml', () => {
     it('includes all four fields', () => {
@@ -34,5 +34,36 @@ describe('buildContactConfirmationHtml', () => {
 
         expect(html).toContain('Jane Doe');
         expect(html).toMatch(/received your message/i);
+    });
+});
+
+describe('buildArticleEmailHtml', () => {
+    it('includes the title, author, and formatted body', () => {
+        const html = buildArticleEmailHtml(
+            'PAC Wins Playground Grant',
+            'Jane Doe',
+            '<p>The PAC secured <strong>funding</strong>.</p>',
+            'https://example.com/unsubscribe?token=abc',
+            'Kanaka PAC'
+        );
+
+        expect(html).toContain('PAC Wins Playground Grant');
+        expect(html).toContain('Jane Doe');
+        expect(html).toContain('<p>The PAC secured <strong>funding</strong>.</p>');
+        expect(html).toContain('https://example.com/unsubscribe?token=abc');
+    });
+
+    it('sanitizes the body before interpolating it into the email', () => {
+        const html = buildArticleEmailHtml(
+            'Title',
+            'Author',
+            '<p>Safe text</p><script>alert(1)</script><img src=x onerror="alert(1)">',
+            'https://example.com/unsubscribe',
+            'Kanaka PAC'
+        );
+
+        expect(html).toContain('Safe text');
+        expect(html).not.toContain('<script>');
+        expect(html).not.toContain('onerror');
     });
 });

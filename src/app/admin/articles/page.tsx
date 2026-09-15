@@ -105,6 +105,42 @@ export default function AdminArticlesPage() {
     }
   }
 
+  async function handlePublish(article: Article) {
+    setSaving(true);
+    try {
+      const published: Article = { ...article, status: "published" };
+      await fetch("/api/articles", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(published),
+      });
+
+      setShowForm(false);
+      setEditing(null);
+      setForm(emptyForm);
+      await fetchArticles();
+
+      const shouldNotify = confirm(
+        "Article published! Would you like to email this to all subscribers?"
+      );
+      if (shouldNotify) {
+        await fetch("/api/send-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "article",
+            subject: `New Article: ${published.title}`,
+            title: published.title,
+            author: published.author,
+            content: published.body,
+          }),
+        });
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
   function handleDelete(id: string) {
     setDeleteId(id);
   }
@@ -264,6 +300,22 @@ export default function AdminArticlesPage() {
                       ? "Update Draft"
                       : "Save as Draft"}
               </button>
+              {editing?.status === "draft" && (
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() =>
+                    handlePublish({
+                      ...editing,
+                      ...form,
+                      coverImageUrl: form.coverImageUrl || undefined,
+                    })
+                  }
+                  className="bg-green-600 text-white px-4 py-2 rounded-md font-medium hover:bg-green-700 disabled:opacity-50"
+                >
+                  Publish
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {
@@ -302,6 +354,14 @@ export default function AdminArticlesPage() {
               <p className="text-sm text-gray-500">By {item.author}</p>
             </div>
             <div className="flex gap-2">
+              {item.status === "draft" && (
+                <button
+                  onClick={() => handlePublish(item)}
+                  className="text-green-600 hover:text-green-800 text-sm font-medium px-3 py-1"
+                >
+                  Publish
+                </button>
+              )}
               <button
                 onClick={() => handleEdit(item)}
                 className="text-primary-600 hover:text-primary-800 text-sm font-medium px-3 py-1"

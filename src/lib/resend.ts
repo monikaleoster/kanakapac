@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { sanitizeHtml } from './sanitize';
 
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Kanaka PAC <onboarding@resend.dev>';
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
@@ -94,6 +95,38 @@ export function buildEventEmailHtml(
       </div>
       <div style="color: #374151; line-height: 1.6;">
         ${description.replace(/\n/g, '<br>')}
+      </div>
+      <hr style="margin: 32px 0; border: none; border-top: 1px solid #e5e7eb;">
+      <p style="font-size: 12px; color: #6b7280;">
+        You received this email because you subscribed to ${pacName} updates.
+        <br><a href="${unsubscribeUrl}" style="color: #6b7280;">Unsubscribe</a>
+      </p>
+    </body>
+    </html>
+  `;
+}
+
+export function buildArticleEmailHtml(
+  title: string,
+  author: string,
+  body: string,
+  unsubscribeUrl: string,
+  pacName: string
+): string {
+  const safeBody = sanitizeHtml(body);
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"></head>
+    <body style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="border-bottom: 3px solid #1e40af; padding-bottom: 16px; margin-bottom: 24px;">
+        <h1 style="color: #1e40af; margin: 0;">${pacName}</h1>
+      </div>
+      <h2 style="color: #111827;">${title}</h2>
+      <p style="color: #6b7280; font-size: 14px; margin-top: -8px;">By ${author}</p>
+      <div style="color: #374151; line-height: 1.6;">
+        ${safeBody}
       </div>
       <hr style="margin: 32px 0; border: none; border-top: 1px solid #e5e7eb;">
       <p style="font-size: 12px; color: #6b7280;">
