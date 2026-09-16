@@ -10,6 +10,14 @@ export default defineConfig({
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL,
     trace: 'on-first-retry',
+    // Vercel Preview deployments are protected by Deployment Protection (SSO wall)
+    // by default. This header bypasses it for automated test traffic — see
+    // https://vercel.com/docs/deployment-protection/methods-to-bypass-deployment-protection
+    ...(process.env.VERCEL_AUTOMATION_BYPASS_SECRET && {
+      extraHTTPHeaders: {
+        'x-vercel-protection-bypass': process.env.VERCEL_AUTOMATION_BYPASS_SECRET,
+      },
+    }),
   },
   projects: [
     {
