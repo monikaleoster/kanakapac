@@ -85,7 +85,7 @@ export default function AdminArticlesPage() {
           subject: `New Article: ${article.title}`,
           title: article.title,
           author: article.author,
-          content: article.body,
+          body: article.body,
         }),
       });
     }

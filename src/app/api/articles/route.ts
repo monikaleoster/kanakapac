@@ -8,6 +8,10 @@ import { isAuthenticated } from "@/lib/auth";
 import { v4 as uuidv4 } from "uuid";
 
 export async function GET() {
+  if (!(await isAuthenticated())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const articles = await getArticles();
   return NextResponse.json(articles);
 }
