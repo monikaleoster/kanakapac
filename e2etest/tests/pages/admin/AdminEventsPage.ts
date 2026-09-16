@@ -35,7 +35,7 @@ export class AdminEventsPage {
 
   async goto() {
     await this.page.goto('/admin/events');
-    await this.page.waitForLoadState('networkidle');
+    await this.newEventBtn.waitFor({ state: 'visible', timeout: 10000 });
   }
 
   getEditBtns() {

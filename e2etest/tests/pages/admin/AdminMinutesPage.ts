@@ -23,7 +23,7 @@ export class AdminMinutesPage {
 
   async goto() {
     await this.page.goto('/admin/minutes');
-    await this.page.waitForLoadState('networkidle');
+    await this.newMinutesBtn.waitFor({ state: 'visible', timeout: 10000 });
   }
 
   getEditBtns() {

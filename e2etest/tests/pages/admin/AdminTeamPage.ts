@@ -27,7 +27,7 @@ export class AdminTeamPage {
 
   async goto() {
     await this.page.goto('/admin/team');
-    await this.page.waitForLoadState('networkidle');
+    await this.addMemberBtn.waitFor({ state: 'visible', timeout: 10000 });
   }
 
   getEditBtns() {

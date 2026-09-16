@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { AdminLoginPage } from '../pages/admin/AdminLoginPage';
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage';
+import { ADMIN_PASSWORD } from '../fixtures/auth.setup';
 
 // WF-ADM-01: Admin Login
 // WF-ADM-02: Admin Logout
@@ -9,7 +10,7 @@ test.describe('WF-ADM-01: Admin Login', () => {
     const loginPage = new AdminLoginPage(page);
     await loginPage.goto();
 
-    await loginPage.login('pac-admin-2026');
+    await loginPage.login(ADMIN_PASSWORD);
     await expect(page).toHaveURL(/dashboard/);
   });
 
@@ -37,7 +38,7 @@ test.describe('WF-ADM-01: Admin Login', () => {
     // Log in first
     const loginPage = new AdminLoginPage(page);
     await loginPage.goto();
-    await loginPage.login('pac-admin-2026');
+    await loginPage.login(ADMIN_PASSWORD);
     await expect(page).toHaveURL(/dashboard/);
 
     // Now visit /admin again — should land on dashboard, not login
