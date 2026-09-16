@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { sanitizeHtml } from './sanitize';
 
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Kanaka PAC <onboarding@resend.dev>';
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
@@ -15,14 +16,15 @@ export interface SendEmailOptions {
   to: string | string[];
   subject: string;
   html: string;
+  replyTo?: string;
 }
 
-export async function sendEmail({ to, subject, html }: SendEmailOptions) {
+export async function sendEmail({ to, subject, html, replyTo }: SendEmailOptions) {
   const resend = getResendClient();
   const { data, error } = await resend.emails.send({
     from: FROM_EMAIL,
     to: Array.isArray(to) ? to : [to],
-    replyTo: 'kcpactreasurer@gmail.com',
+    replyTo: replyTo ?? 'kcpactreasurer@gmail.com',
     subject,
     html,
   });
@@ -99,6 +101,102 @@ export function buildEventEmailHtml(
         You received this email because you subscribed to ${pacName} updates.
         <br><a href="${unsubscribeUrl}" style="color: #6b7280;">Unsubscribe</a>
       </p>
+    </body>
+    </html>
+  `;
+}
+
+export function buildArticleEmailHtml(
+  title: string,
+  author: string,
+  body: string,
+  unsubscribeUrl: string,
+  pacName: string
+): string {
+  const safeBody = sanitizeHtml(body);
+  const safeTitle = escapeHtml(title);
+  const safeAuthor = escapeHtml(author);
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"></head>
+    <body style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="border-bottom: 3px solid #1e40af; padding-bottom: 16px; margin-bottom: 24px;">
+        <h1 style="color: #1e40af; margin: 0;">${pacName}</h1>
+      </div>
+      <h2 style="color: #111827;">${safeTitle}</h2>
+      <p style="color: #6b7280; font-size: 14px; margin-top: -8px;">By ${safeAuthor}</p>
+      <div style="color: #374151; line-height: 1.6;">
+        ${safeBody}
+      </div>
+      <hr style="margin: 32px 0; border: none; border-top: 1px solid #e5e7eb;">
+      <p style="font-size: 12px; color: #6b7280;">
+        You received this email because you subscribed to ${pacName} updates.
+        <br><a href="${unsubscribeUrl}" style="color: #6b7280;">Unsubscribe</a>
+      </p>
+    </body>
+    </html>
+  `;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+export function buildContactEmailHtml(
+  name: string,
+  email: string,
+  subject: string,
+  message: string
+): string {
+  const safeName = escapeHtml(name);
+  const safeEmail = escapeHtml(email);
+  const safeSubject = escapeHtml(subject);
+  const safeMessage = escapeHtml(message).replace(/\n/g, '<br>');
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"></head>
+    <body style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="border-bottom: 3px solid #1e40af; padding-bottom: 16px; margin-bottom: 24px;">
+        <h1 style="color: #1e40af; margin: 0;">New Contact Form Submission</h1>
+      </div>
+      <div style="background: #f3f4f6; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+        <p style="margin: 4px 0;"><strong>Name:</strong> ${safeName}</p>
+        <p style="margin: 4px 0;"><strong>Email:</strong> ${safeEmail}</p>
+        <p style="margin: 4px 0;"><strong>Subject:</strong> ${safeSubject}</p>
+      </div>
+      <div style="color: #374151; line-height: 1.6;">
+        <p style="margin: 0 0 8px 0;"><strong>Message:</strong></p>
+        ${safeMessage}
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+export function buildContactConfirmationHtml(name: string): string {
+  const safeName = escapeHtml(name);
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"></head>
+    <body style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="border-bottom: 3px solid #1e40af; padding-bottom: 16px; margin-bottom: 24px;">
+        <h1 style="color: #1e40af; margin: 0;">Kanaka PAC</h1>
+      </div>
+      <div style="color: #374151; line-height: 1.6;">
+        <p>Hi ${safeName},</p>
+        <p>Thank you for reaching out! We've received your message and our team will be in touch soon.</p>
+      </div>
     </body>
     </html>
   `;

@@ -36,6 +36,18 @@ export interface Announcement {
     expiresAt: string | null;
 }
 
+export interface Article {
+    id: string;
+    title: string;
+    author: string;
+    excerpt: string;
+    body: string;
+    coverImageUrl?: string;
+    status: "draft" | "published";
+    publishedAt: string | null;
+    createdAt: string;
+}
+
 export interface Policy {
     id: string;
     title: string;

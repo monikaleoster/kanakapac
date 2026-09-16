@@ -6,6 +6,7 @@ import {
   generateUnsubscribeUrl,
   buildAnnouncementEmailHtml,
   buildEventEmailHtml,
+  buildArticleEmailHtml,
 } from '@/lib/resend';
 
 export async function POST(request: NextRequest) {
@@ -13,8 +14,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const body = await request.json();
-  const { type, subject, title, content, date, time, location, description } = body;
+  const requestBody = await request.json();
+  const { type, subject, title, content, body, date, time, location, description, author } = requestBody;
 
   if (!subject || !type) {
     return NextResponse.json({ error: 'Subject and type are required' }, { status: 400 });
@@ -36,6 +37,10 @@ export async function POST(request: NextRequest) {
     if (type === 'event') {
       html = buildEventEmailHtml(
         title, date, time, location, description, unsubscribeUrl, settings.pacName
+      );
+    } else if (type === 'article') {
+      html = buildArticleEmailHtml(
+        title || subject, author, body, unsubscribeUrl, settings.pacName
       );
     } else {
       html = buildAnnouncementEmailHtml(

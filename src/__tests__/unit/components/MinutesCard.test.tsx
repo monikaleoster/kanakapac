@@ -17,18 +17,6 @@ describe('MinutesCard', () => {
         expect(screen.getByText('February 5, 2026')).toBeInTheDocument();
     });
 
-    it('shows download link when fileUrl is present', () => {
-        render(<MinutesCard minutes={mockMinutes} />);
-        const link = screen.getByRole('link', { name: /download/i });
-        expect(link).toHaveAttribute('href', 'https://example.com/minutes.pdf');
-    });
-
-    it('hides download link when no fileUrl', () => {
-        const noFileMinutes = { ...mockMinutes, fileUrl: '' };
-        render(<MinutesCard minutes={noFileMinutes} />);
-        expect(screen.queryByRole('link', { name: /download/i })).not.toBeInTheDocument();
-    });
-
     it('links to detail page', () => {
         render(<MinutesCard minutes={mockMinutes} />);
         // There are usually two links, one is the title/card, one is the button

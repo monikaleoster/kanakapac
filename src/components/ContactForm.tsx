@@ -2,12 +2,49 @@
 
 import { useState } from "react";
 
-export default function ContactForm() {
-    const [status, setStatus] = useState<"idle" | "success">("idle");
+type Status = "idle" | "loading" | "success" | "error";
 
-    function handleSubmit(e: React.FormEvent) {
+export default function ContactForm() {
+    const [formData, setFormData] = useState({
+        name: "",
+        email: "",
+        subject: "",
+        message: "",
+    });
+    const [status, setStatus] = useState<Status>("idle");
+    const [errorMessage, setErrorMessage] = useState("");
+
+    function handleChange(
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    ) {
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+
+    async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        setStatus("success");
+        setStatus("loading");
+        setErrorMessage("");
+
+        try {
+            const res = await fetch("/api/contact", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData),
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                setStatus("success");
+            } else {
+                setStatus("error");
+                setErrorMessage(data.error || "Something went wrong. Please try again.");
+            }
+        } catch {
+            setStatus("error");
+            setErrorMessage("Something went wrong. Please try again.");
+        }
     }
 
     if (status === "success") {
@@ -33,6 +70,9 @@ export default function ContactForm() {
                     type="text"
                     id="name"
                     name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
                     placeholder="Full name"
                 />
@@ -48,6 +88,9 @@ export default function ContactForm() {
                     type="email"
                     id="email"
                     name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
                     placeholder="you@example.com"
                 />
@@ -63,6 +106,9 @@ export default function ContactForm() {
                     type="text"
                     id="subject"
                     name="subject"
+                    value={formData.subject}
+                    onChange={handleChange}
+                    required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
                     placeholder="What is this about?"
                 />
@@ -78,15 +124,22 @@ export default function ContactForm() {
                     id="message"
                     name="message"
                     rows={5}
+                    value={formData.message}
+                    onChange={handleChange}
+                    required
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
                     placeholder="Your message..."
                 />
             </div>
+            {status === "error" && (
+                <p className="text-red-500 text-sm">{errorMessage}</p>
+            )}
             <button
                 type="submit"
-                className="w-full bg-primary-600 text-white py-2 px-4 rounded-md font-medium hover:bg-primary-700 transition-colors"
+                disabled={status === "loading"}
+                className="w-full bg-primary-600 text-white py-2 px-4 rounded-md font-medium hover:bg-primary-700 transition-colors disabled:opacity-50"
             >
-                Send Message
+                {status === "loading" ? "Sending…" : "Send Message"}
             </button>
         </form>
     );

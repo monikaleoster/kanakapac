@@ -75,6 +75,19 @@ export default function AdminDashboardPage() {
                 </Link>
 
                 <Link
+                    href="/admin/articles"
+                    className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-indigo-500"
+                >
+                    <h2 className="text-lg font-semibold text-gray-900">Articles</h2>
+                    <p className="text-sm text-gray-600 mt-2">
+                        Write, edit, and publish long-form articles.
+                    </p>
+                    <span className="text-primary-600 text-sm font-medium mt-4 inline-block">
+                        Manage Articles &rarr;
+                    </span>
+                </Link>
+
+                <Link
                     href="/admin/team"
                     className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-pink-500"
                 >

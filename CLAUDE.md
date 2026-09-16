@@ -1,5 +1,5 @@
 # Kanaka PAC Website
-
+Use askmeuserquestion tool for all the questions
 ## Project Overview
 
 This is the official website for the **Parent Advisory Council (PAC)**. It serves as the central hub for PAC communications, event management, meeting documentation, announcements, and policy information.
@@ -116,3 +116,17 @@ All data is stored as JSON arrays in the `/data` directory.
 - Use Tailwind utility classes for all styling — no separate CSS files.
 - All dates displayed in a human-readable format (e.g., "February 11, 2026").
 - Admin routes are protected via session cookie validated against `ADMIN_PASSWORD`.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live as markdown files under `.scratch/<feature-slug>/` in this repo. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default label vocabulary (needs-triage, needs-info, ready-for-agent, ready-for-human, wontfix). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout (root `CONTEXT.md` + `docs/adr/`). See `docs/agents/domain.md`.
