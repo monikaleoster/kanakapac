@@ -16,13 +16,13 @@
     "@tiptap/pm": "^3.31.3",
     "@tiptap/react": "^3.31.3",
     "@tiptap/starter-kit": "^3.31.3",
-    "isomorphic-dompurify": "^2.36.0",
     "next": "^14.2.0",
     "next-auth": "^4.24.13",
     "postgres": "^3.4.8",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "resend": "^6.12.2",
+    "sanitize-html": "2.17.5",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
@@ -34,6 +34,7 @@
     "@types/node": "^20.0.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
+    "@types/sanitize-html": "^2.16.1",
     "@types/uuid": "^9.0.0",
     "autoprefixer": "^10.4.0",
     "eslint": "^8.57.0",

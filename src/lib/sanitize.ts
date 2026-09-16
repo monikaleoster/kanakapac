@@ -1,4 +1,4 @@
-import DOMPurify from "isomorphic-dompurify";
+import sanitize from "sanitize-html";
 
 /**
  * Tags allowed in an Article Body. Keeps standard rich-text formatting
@@ -35,13 +35,20 @@ const ALLOWED_ATTR = ["href", "src", "alt", "title", "target", "rel"];
  * Every path that renders Article Body HTML (public detail page,
  * publish-notification email, etc.) must call this before injecting the
  * content, per ADR 0001.
+ *
+ * Uses sanitize-html (pure JS, no jsdom) rather than isomorphic-dompurify:
+ * the latter pulls in jsdom, whose transitive deps have repeatedly broken
+ * Vercel's serverless bundling (missing asset files, ESM-only requires).
  */
 export function sanitizeHtml(html: string): string {
     if (!html) return "";
 
-    return DOMPurify.sanitize(html, {
-        ALLOWED_TAGS,
-        ALLOWED_ATTR,
-        ALLOW_DATA_ATTR: false,
+    return sanitize(html, {
+        allowedTags: ALLOWED_TAGS,
+        allowedAttributes: {
+            "*": ALLOWED_ATTR,
+        },
+        allowedSchemes: ["http", "https", "mailto"],
+        allowProtocolRelative: false,
     });
 }
