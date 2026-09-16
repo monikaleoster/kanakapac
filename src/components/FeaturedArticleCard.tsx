@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Article } from "@/lib/types";
 import { formatDateTime } from "@/lib/format";
+import ArticleCoverImage from "@/components/ArticleCoverImage";
 
 export default function FeaturedArticleCard({ article }: { article: Article }) {
   return (
@@ -8,16 +9,11 @@ export default function FeaturedArticleCard({ article }: { article: Article }) {
       href={`/articles/${article.id}`}
       className="group grid grid-cols-1 md:grid-cols-2 bg-white rounded-lg shadow-md border border-gray-100 hover:shadow-lg transition-shadow overflow-hidden"
     >
-      {article.coverImageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={article.coverImageUrl}
-          alt={article.title}
-          className="w-full h-64 md:h-full object-cover"
-        />
-      ) : (
-        <div className="w-full h-64 md:h-full bg-primary-50" />
-      )}
+      <ArticleCoverImage
+        article={article}
+        alt={article.title}
+        className="w-full h-64 md:h-full object-cover"
+      />
       <div className="p-8 flex flex-col justify-center">
         <span className="text-xs font-semibold text-primary-700 uppercase tracking-wide">
           Featured

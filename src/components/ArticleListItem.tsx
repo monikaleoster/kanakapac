@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Article } from "@/lib/types";
 import { formatDateTime } from "@/lib/format";
+import ArticleCoverImage from "@/components/ArticleCoverImage";
 
 export default function ArticleListItem({ article }: { article: Article }) {
   return (
@@ -8,16 +9,11 @@ export default function ArticleListItem({ article }: { article: Article }) {
       href={`/articles/${article.id}`}
       className="group flex gap-6 py-6 border-t border-gray-200 first:border-t-0"
     >
-      {article.coverImageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={article.coverImageUrl}
-          alt={article.title}
-          className="w-40 h-28 rounded-md object-cover flex-shrink-0"
-        />
-      ) : (
-        <div className="w-40 h-28 rounded-md bg-primary-50 flex-shrink-0" />
-      )}
+      <ArticleCoverImage
+        article={article}
+        alt={article.title}
+        className="w-40 h-28 rounded-md object-cover flex-shrink-0"
+      />
       <div className="min-w-0">
         <h3 className="text-lg font-semibold text-gray-900 group-hover:text-primary-800">
           {article.title}

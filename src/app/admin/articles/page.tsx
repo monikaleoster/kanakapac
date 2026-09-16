@@ -5,6 +5,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Article } from "@/lib/types";
 import { uploadImage } from "@/lib/uploadImage";
+import ArticleCoverImage from "@/components/ArticleCoverImage";
 
 const ArticleEditor = dynamic(() => import("@/components/ArticleEditor"), {
   ssr: false,
@@ -18,6 +19,8 @@ const emptyForm = {
   coverImageUrl: "",
 };
 
+const MAX_COVER_GENERATIONS = 5;
+
 export default function AdminArticlesPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [editing, setEditing] = useState<Article | null>(null);
@@ -26,6 +29,11 @@ export default function AdminArticlesPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [coverUploading, setCoverUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [coverPrompt, setCoverPrompt] = useState("");
+  const [coverPromptEdited, setCoverPromptEdited] = useState(false);
+  const [generatingCover, setGeneratingCover] = useState(false);
+  const [coverGenerationCount, setCoverGenerationCount] = useState(0);
+  const [coverGenerationError, setCoverGenerationError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchArticles();
@@ -38,6 +46,13 @@ export default function AdminArticlesPage() {
     }
   }
 
+  function seedCoverGeneration(titleForPrompt: string) {
+    setCoverPrompt(titleForPrompt);
+    setCoverPromptEdited(false);
+    setCoverGenerationCount(0);
+    setCoverGenerationError(null);
+  }
+
   function handleEdit(item: Article) {
     setEditing(item);
     setForm({
@@ -47,13 +62,27 @@ export default function AdminArticlesPage() {
       body: item.body,
       coverImageUrl: item.coverImageUrl || "",
     });
+    seedCoverGeneration(item.title);
     setShowForm(true);
   }
 
   function handleNew() {
     setEditing(null);
     setForm(emptyForm);
+    seedCoverGeneration("");
     setShowForm(true);
+  }
+
+  function handleTitleChange(title: string) {
+    setForm((f) => ({ ...f, title }));
+    if (!coverPromptEdited) {
+      setCoverPrompt(title);
+    }
+  }
+
+  function handleCoverPromptChange(prompt: string) {
+    setCoverPrompt(prompt);
+    setCoverPromptEdited(true);
   }
 
   async function handleCoverImageChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -69,6 +98,35 @@ export default function AdminArticlesPage() {
       }
     } finally {
       setCoverUploading(false);
+    }
+  }
+
+  async function handleGenerateCoverImage() {
+    if (generatingCover || coverGenerationCount >= MAX_COVER_GENERATIONS) return;
+
+    setGeneratingCover(true);
+    setCoverGenerationError(null);
+    setCoverGenerationCount((c) => c + 1);
+
+    try {
+      const res = await fetch("/api/articles/generate-cover-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: coverPrompt }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Cover image generation failed");
+      }
+
+      const data = await res.json();
+      setForm((f) => ({ ...f, coverImageUrl: data.fileUrl }));
+    } catch {
+      setCoverGenerationError(
+        "Couldn't generate a cover image. Try again, or upload your own instead."
+      );
+    } finally {
+      setGeneratingCover(false);
     }
   }
 
@@ -236,7 +294,7 @@ export default function AdminArticlesPage() {
                   id="article-title"
                   type="text"
                   value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  onChange={(e) => handleTitleChange(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   required
                 />
@@ -274,14 +332,50 @@ export default function AdminArticlesPage() {
               <label htmlFor="article-cover" className="block text-sm font-medium text-gray-700 mb-1">
                 Cover Image (optional)
               </label>
-              {form.coverImageUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={form.coverImageUrl}
-                  alt="Cover preview"
-                  className="w-full max-h-48 object-cover rounded-md mb-2"
+              <ArticleCoverImage
+                article={{ coverImageUrl: form.coverImageUrl || undefined }}
+                alt="Cover preview"
+                className="w-full max-h-48 object-cover rounded-md mb-2"
+              />
+
+              <div className="mb-3 p-3 border border-gray-200 rounded-md bg-gray-50">
+                <label htmlFor="article-cover-prompt" className="block text-sm font-medium text-gray-700 mb-1">
+                  AI cover image prompt
+                </label>
+                <textarea
+                  id="article-cover-prompt"
+                  value={coverPrompt}
+                  onChange={(e) => handleCoverPromptChange(e.target.value)}
+                  rows={2}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                 />
-              )}
+                <div className="flex items-center justify-between mt-2">
+                  <button
+                    type="button"
+                    onClick={handleGenerateCoverImage}
+                    disabled={
+                      generatingCover ||
+                      coverGenerationCount >= MAX_COVER_GENERATIONS ||
+                      !coverPrompt.trim()
+                    }
+                    className="bg-primary-600 text-white px-3 py-1.5 rounded-md text-sm font-medium hover:bg-primary-700 disabled:opacity-50"
+                  >
+                    {generatingCover
+                      ? "Generating..."
+                      : coverGenerationCount === 0
+                        ? "Generate Cover Image"
+                        : "Regenerate Cover Image"}
+                  </button>
+                  <span className="text-xs text-gray-500">
+                    {MAX_COVER_GENERATIONS - coverGenerationCount} generation
+                    {MAX_COVER_GENERATIONS - coverGenerationCount === 1 ? "" : "s"} left
+                  </span>
+                </div>
+                {coverGenerationError && (
+                  <p className="text-sm text-red-600 mt-2">{coverGenerationError}</p>
+                )}
+              </div>
+
               <input
                 id="article-cover"
                 type="file"

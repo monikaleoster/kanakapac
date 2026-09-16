@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { uploadBuffer } from "@/lib/storage";
 import { isAuthenticated } from "@/lib/auth";
 
 const UPLOAD_CONTEXTS = {
@@ -46,23 +46,9 @@ export async function POST(request: NextRequest) {
         const buffer = await file.arrayBuffer();
         const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "")}`;
 
-        const { data, error } = await supabase.storage
-            .from(bucket)
-            .upload(filename, buffer, {
-                contentType: file.type,
-                upsert: true
-            });
+        const fileUrl = await uploadBuffer(bucket, filename, buffer, file.type);
 
-        if (error) {
-            console.error("Supabase storage error:", error);
-            return NextResponse.json({ error: "Upload to Supabase failed" }, { status: 500 });
-        }
-
-        const { data: { publicUrl } } = supabase.storage
-            .from(bucket)
-            .getPublicUrl(filename);
-
-        return NextResponse.json({ fileUrl: publicUrl });
+        return NextResponse.json({ fileUrl });
     } catch (e) {
         console.error("Upload error:", e);
         return NextResponse.json({ error: "Upload failed" }, { status: 500 });

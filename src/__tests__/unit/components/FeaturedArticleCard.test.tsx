@@ -43,10 +43,10 @@ describe('FeaturedArticleCard', () => {
         expect(img).toHaveAttribute('src', mockArticle.coverImageUrl);
     });
 
-    it('does not render an image when no cover image is set', () => {
+    it('renders the placeholder image when no cover image is set', () => {
         const noImage = { ...mockArticle, coverImageUrl: undefined };
         render(<FeaturedArticleCard article={noImage} />);
-        expect(screen.queryByRole('img')).not.toBeInTheDocument();
+        expect(screen.getByRole('img')).toHaveAttribute('src', '/images/article-cover-placeholder.jpg');
     });
 
     it('links to the article detail page', () => {
