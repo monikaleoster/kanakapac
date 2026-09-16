@@ -14,6 +14,7 @@ jest.mock('@/lib/supabase', () => ({
         upsert: jest.fn().mockReturnThis(),
         delete: jest.fn().mockReturnThis(),
         or: jest.fn().mockReturnThis(),
+        in: jest.fn().mockResolvedValue({ data: [], error: null }),
     },
 }));
 
@@ -81,6 +82,8 @@ describe('data.ts lib unit tests', () => {
                 time: '12:00',
                 location: 'New Loc',
                 description: 'New Desc',
+                rsvp_enabled: false,
+                ticket_url: null,
                 created_at: '2026-01-01T00:00:00Z'
             });
         });
