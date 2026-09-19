@@ -1122,51 +1122,48 @@ npm run dev
 
 ### Pipeline overview
 
-There are **two separate deploy paths**, defined in `.github/workflows/`. Do not confuse them:
+There are **two workflows**, defined in `.github/workflows/`. Do not confuse them:
 
-| | Trigger | Target | DB migration? | Approval? |
-|---|---------|--------|----------------|-----------|
-| **Staging** (`staging.yml`) | Every push/merge to `main` | Vercel preview URL | Yes, against the staging DB (`CI_DATABASE_URL`) | No |
-| **Production** (`production.yml`) | Pushing a git tag matching `v*` | `https://kanakapac.ca` | Yes, against the prod DB (`PROD_DATABASE_URL`) | **Yes** — GitHub `production` environment requires manual review |
+| | Trigger | Target | DB migration? | Gate |
+|---|---------|--------|----------------|------|
+| **CI & Preview** (`ci.yml`) | Every push/PR on any branch other than `main` (`feature/**`, `claude/**`) | A Vercel preview URL | Yes, against the shared staging DB (`CI_DATABASE_URL`) — only runs if quality gates pass, and the preview only deploys if that migration succeeds | Fully automatic |
+| **Production** (`production.yml`) | Manually run from the Actions tab (`workflow_dispatch`) | `https://kanakapac.ca` | Yes, against the prod DB (`PROD_DATABASE_URL`) — the Vercel deploy only runs if that migration succeeds | Manual — someone has to click "Run workflow" |
 
-Merging a PR to `main` **only ever deploys to staging**. It never touches production. Vercel's own "auto-deploy on push" integration is deliberately disabled for `main` via `vercel.json` (`git.deploymentEnabled.main: false`) so that the tag-gated workflow is the only path to production. If you ever see a production deploy that wasn't triggered by a tag push, that's a misconfiguration — check `vercel.json` is still present and check the Vercel dashboard under **Project Settings → Git** for a stray auto-deploy setting.
+`ci.yml` also runs lint/typecheck/unit-tests/build on pushes to `main` itself, but `main` never triggers a deploy of any kind — pushing to `main` only proves the code is releasable. Vercel's own git-integration auto-deploy is disabled for **every** branch (`vercel.json`: `git.deploymentEnabled: false`), so `ci.yml`'s `deploy-preview` job and `production.yml`'s `deploy-production` job are the *only* two ways anything reaches Vercel. If you ever see a Vercel deployment that didn't come from one of those two Actions runs, that's a misconfiguration — check `vercel.json` is still present, and check the Vercel dashboard under **Project Settings → Git** for a stray override.
+
+### What happens on a feature branch / PR
+
+Pushing to a `feature/**` or `claude/**` branch (or opening/updating a PR into `main`) runs, in order:
+
+1. Quality gates in parallel: `Test DB Migrations` (against a throwaway CI postgres container), `Lint & Type Check`, `Unit Tests` (`npm test`), then `Build`.
+2. `migrate-staging-db` — only starts once the gates above pass. Applies every file in `supabase/migrations/*.sql` to the real, shared staging DB (`CI_DATABASE_URL`).
+3. `deploy-preview` — only starts if the staging migration succeeds. Deploys a Vercel preview via the CLI and comments the URL on the PR.
+4. `e2e-tests` — only starts once the preview deploys. Runs the Playwright suite against that preview URL.
+
+Because `migrate-staging-db` gates `deploy-preview`, a broken migration blocks that branch's preview entirely rather than shipping a preview against a stale or broken schema. Note the staging DB is **shared across every open branch** — there's no per-branch isolation, so two branches with conflicting migrations can clobber each other's schema state.
 
 ### Step-by-step: shipping a release
 
-1. **Merge your PR to `main`.**
-   This automatically kicks off `staging.yml`: migrates the staging DB, deploys a Vercel preview, then runs the Playwright E2E suite against it.
+1. **Merge your PR to `main`.** This only runs the quality gates (lint/typecheck/unit-tests/build) — no deploy happens.
 
-2. **Wait for staging to go green.**
-   Check the Actions tab for the `Deploy to Staging` run. Confirm `migrate-staging-db`, `deploy-staging`, and `e2e-tests` all pass. Do not proceed if E2E tests are failing — that preview build is what production will run.
+2. **Confirm you're ready to release**, e.g. by having reviewed E2E results from that PR's own preview run before merging.
 
-3. **Manually smoke-test the staging URL** (optional but recommended for anything touching data or auth), e.g. create a test event, RSVP, check admin login.
+3. **Go to the Actions tab → "Deploy to Production" → Run workflow.** Pick the branch/commit to deploy (defaults to the tip of `main`).
 
-4. **Tag the commit on `main` you want to release**, using semantic versioning (`vMAJOR.MINOR.PATCH`):
-   ```bash
-   git checkout main
-   git pull
-   git tag v1.0.0
-   git push origin v1.0.0
-   ```
-   (This repo has not cut a tagged release yet — `v1.0.0` is the starting point; bump the minor/patch version for subsequent releases.)
+4. **`migrate-production-db` runs first.** It applies every file in `supabase/migrations/*.sql` (in sorted order) against `PROD_DATABASE_URL`, with `ON_ERROR_STOP=1` — a bad migration halts the run before anything is deployed — then sends `NOTIFY pgrst, 'reload schema'` so PostgREST picks up the new schema.
 
-5. **Pushing the tag triggers `production.yml`.** Go to the Actions tab and open the `Deploy to Production` run.
+5. **`deploy-production` runs only if the migration succeeded.** It runs `vercel pull --environment=production`, `vercel build --prod`, then `vercel deploy --prebuilt --prod`.
 
-6. **Approve the `migrate-production-db` job.**
-   This job runs inside the GitHub `production` environment, which requires manual approval. Click **Review deployments** on the run, select `production`, and approve. Only then does it run every file in `supabase/migrations/*.sql` (in sorted order) against `PROD_DATABASE_URL`, with `ON_ERROR_STOP=1` — a bad migration halts the run before anything is deployed — then sends `NOTIFY pgrst, 'reload schema'` so PostgREST picks up the new schema.
-
-7. **Approve `deploy-production`** if prompted (same `production` environment gate). This job only starts after `migrate-production-db` succeeds. It runs `vercel pull --environment=production`, `vercel build --prod`, then `vercel deploy --prebuilt --prod`.
-
-8. **Verify the live site** at `https://kanakapac.ca` — check the homepage, an events page, and admin login at minimum.
+6. **Verify the live site** at `https://kanakapac.ca` — check the homepage, an events page, and admin login at minimum.
 
 ### Rolling back
 
-- **App only (no schema change involved):** in the Vercel dashboard, find the previous successful production deployment and use **Promote to Production**, or push a new tag pointing at the last-known-good commit and re-run step 4–8.
-- **Database:** there is no automatic "down" migration in this repo — `supabase/migrations/*.sql` only runs forward. To undo a schema change, write a new migration file that reverses it, then ship it through the same tag process above.
+- **App only (no schema change involved):** in the Vercel dashboard, find the previous successful production deployment and use **Promote to Production**, or re-run `workflow_dispatch` picking the last-known-good commit.
+- **Database:** there is no automatic "down" migration in this repo — `supabase/migrations/*.sql` only runs forward. To undo a schema change, write a new migration file that reverses it, then ship it through the same manual-dispatch process above.
 
-### Who can approve production deploys
+### Who can trigger a production deploy
 
-Approval is controlled by the reviewers configured on the `production` environment in **GitHub repo Settings → Environments → production**. If you can't approve a run and believe you should be able to, ask whoever administers the repo to add you as a reviewer there — this is not something fixable from the workflow file.
+Anyone with write access to the repo can run `production.yml` via `workflow_dispatch` — there is no separate reviewer-approval step beyond that. The act of manually starting the workflow *is* the gate.
 
 ---
 
