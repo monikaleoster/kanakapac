@@ -23,11 +23,12 @@
 14. [Key Components](#14-key-components)
 15. [Configuration & Environment Variables](#15-configuration--environment-variables)
 16. [Developer Onboarding — Running Locally](#16-developer-onboarding--running-locally)
-17. [Testing Guide](#17-testing-guide)
-18. [Bug Investigation Guide](#18-bug-investigation-guide)
-19. [Feature Development Guide](#19-feature-development-guide)
-20. [Known Quirks & Gotchas](#20-known-quirks--gotchas)
-21. [Junior Developer Task Catalog](#21-junior-developer-task-catalog)
+17. [Deploying to Production](#17-deploying-to-production)
+18. [Testing Guide](#18-testing-guide)
+19. [Bug Investigation Guide](#19-bug-investigation-guide)
+20. [Feature Development Guide](#20-feature-development-guide)
+21. [Known Quirks & Gotchas](#21-known-quirks--gotchas)
+22. [Junior Developer Task Catalog](#22-junior-developer-task-catalog)
 
 ---
 
@@ -1117,7 +1118,59 @@ npm run dev
 
 ---
 
-## 17. Testing Guide
+## 17. Deploying to Production
+
+### Pipeline overview
+
+There are **two separate deploy paths**, defined in `.github/workflows/`. Do not confuse them:
+
+| | Trigger | Target | DB migration? | Approval? |
+|---|---------|--------|----------------|-----------|
+| **Staging** (`staging.yml`) | Every push/merge to `main` | Vercel preview URL | Yes, against the staging DB (`CI_DATABASE_URL`) | No |
+| **Production** (`production.yml`) | Pushing a git tag matching `v*` | `https://kanakapac.ca` | Yes, against the prod DB (`PROD_DATABASE_URL`) | **Yes** — GitHub `production` environment requires manual review |
+
+Merging a PR to `main` **only ever deploys to staging**. It never touches production. Vercel's own "auto-deploy on push" integration is deliberately disabled for `main` via `vercel.json` (`git.deploymentEnabled.main: false`) so that the tag-gated workflow is the only path to production. If you ever see a production deploy that wasn't triggered by a tag push, that's a misconfiguration — check `vercel.json` is still present and check the Vercel dashboard under **Project Settings → Git** for a stray auto-deploy setting.
+
+### Step-by-step: shipping a release
+
+1. **Merge your PR to `main`.**
+   This automatically kicks off `staging.yml`: migrates the staging DB, deploys a Vercel preview, then runs the Playwright E2E suite against it.
+
+2. **Wait for staging to go green.**
+   Check the Actions tab for the `Deploy to Staging` run. Confirm `migrate-staging-db`, `deploy-staging`, and `e2e-tests` all pass. Do not proceed if E2E tests are failing — that preview build is what production will run.
+
+3. **Manually smoke-test the staging URL** (optional but recommended for anything touching data or auth), e.g. create a test event, RSVP, check admin login.
+
+4. **Tag the commit on `main` you want to release**, using semantic versioning (`vMAJOR.MINOR.PATCH`):
+   ```bash
+   git checkout main
+   git pull
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+   (This repo has not cut a tagged release yet — `v1.0.0` is the starting point; bump the minor/patch version for subsequent releases.)
+
+5. **Pushing the tag triggers `production.yml`.** Go to the Actions tab and open the `Deploy to Production` run.
+
+6. **Approve the `migrate-production-db` job.**
+   This job runs inside the GitHub `production` environment, which requires manual approval. Click **Review deployments** on the run, select `production`, and approve. Only then does it run every file in `supabase/migrations/*.sql` (in sorted order) against `PROD_DATABASE_URL`, with `ON_ERROR_STOP=1` — a bad migration halts the run before anything is deployed — then sends `NOTIFY pgrst, 'reload schema'` so PostgREST picks up the new schema.
+
+7. **Approve `deploy-production`** if prompted (same `production` environment gate). This job only starts after `migrate-production-db` succeeds. It runs `vercel pull --environment=production`, `vercel build --prod`, then `vercel deploy --prebuilt --prod`.
+
+8. **Verify the live site** at `https://kanakapac.ca` — check the homepage, an events page, and admin login at minimum.
+
+### Rolling back
+
+- **App only (no schema change involved):** in the Vercel dashboard, find the previous successful production deployment and use **Promote to Production**, or push a new tag pointing at the last-known-good commit and re-run step 4–8.
+- **Database:** there is no automatic "down" migration in this repo — `supabase/migrations/*.sql` only runs forward. To undo a schema change, write a new migration file that reverses it, then ship it through the same tag process above.
+
+### Who can approve production deploys
+
+Approval is controlled by the reviewers configured on the `production` environment in **GitHub repo Settings → Environments → production**. If you can't approve a run and believe you should be able to, ask whoever administers the repo to add you as a reviewer there — this is not something fixable from the workflow file.
+
+---
+
+## 18. Testing Guide
 
 ### Test framework
 
@@ -1189,7 +1242,7 @@ global.fetch = jest.fn(() =>
 
 ---
 
-## 18. Bug Investigation Guide
+## 19. Bug Investigation Guide
 
 ### Step 1: Identify the entry point
 
@@ -1257,7 +1310,7 @@ When a server component crashes, Next.js shows an error page in development. The
 
 ---
 
-## 19. Feature Development Guide
+## 20. Feature Development Guide
 
 ### How to add a new CRUD resource (e.g., "Volunteer Sign-ups")
 
@@ -1378,7 +1431,7 @@ Currently `src/lib/auth-options.ts:21` checks one password. To support multiple 
 
 ---
 
-## 20. Known Quirks & Gotchas
+## 21. Known Quirks & Gotchas
 
 ### 1. `formatDate` appends `T00:00:00` to avoid timezone shift
 
@@ -1418,7 +1471,7 @@ The `/data/` directory contains legacy JSON files (`events.json`, etc.) from an 
 
 ---
 
-## 21. Junior Developer Task Catalog
+## 22. Junior Developer Task Catalog
 
 ### Beginner tasks (1–3 hours each)
 
