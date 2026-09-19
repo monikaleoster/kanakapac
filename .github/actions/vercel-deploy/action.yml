@@ -1,0 +1,46 @@
+name: Deploy to Vercel
+description: Builds and deploys this project to Vercel via the CLI, for either the preview or production environment.
+
+inputs:
+  vercel-token:
+    description: Vercel API token.
+    required: true
+  environment:
+    description: Vercel environment to pull config for ("preview" or "production").
+    required: true
+  prod:
+    description: Pass --prod to the Vercel build/deploy commands.
+    required: false
+    default: "false"
+
+outputs:
+  url:
+    description: The deployed URL.
+    value: ${{ steps.deploy.outputs.url }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+        cache: "npm"
+
+    - name: Install Vercel CLI
+      shell: bash
+      run: npm install -g vercel@latest
+
+    - name: Pull Vercel environment
+      shell: bash
+      run: vercel pull --yes --environment=${{ inputs.environment }} --token=${{ inputs.vercel-token }}
+
+    - name: Build for Vercel
+      shell: bash
+      run: vercel build ${{ inputs.prod == 'true' && '--prod' || '' }} --token=${{ inputs.vercel-token }}
+
+    - name: Deploy to Vercel
+      id: deploy
+      shell: bash
+      run: |
+        URL=$(vercel deploy --prebuilt ${{ inputs.prod == 'true' && '--prod' || '' }} --token=${{ inputs.vercel-token }})
+        echo "url=$URL" >> "$GITHUB_OUTPUT"

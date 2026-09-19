@@ -128,22 +128,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install PostgreSQL client
-        run: sudo apt-get install -y postgresql-client
-
-      - name: Apply all migrations to staging Supabase
-        env:
-          PGSSLMODE: require
-        run: |
-          for f in $(ls supabase/migrations/*.sql | sort); do
-            echo "Applying $f..."
-            psql "${{ secrets.CI_DATABASE_URL }}" -f "$f" -v ON_ERROR_STOP=1
-          done
-
-      - name: Reload PostgREST schema cache
-        env:
-          PGSSLMODE: require
-        run: psql "${{ secrets.CI_DATABASE_URL }}" -c "NOTIFY pgrst, 'reload schema';"
+      - name: Migrate staging database
+        uses: ./.github/actions/migrate-db
+        with:
+          database-url: ${{ secrets.CI_DATABASE_URL }}
 
   deploy-preview:
     name: Deploy Preview
@@ -158,26 +146,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-
-      - name: Install Vercel CLI
-        run: npm install -g vercel@latest
-
-      - name: Pull Vercel environment (downloads preview secrets from Vercel)
-        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Build for Vercel
-        # Runtime secrets come from `vercel pull` above — no duplication needed
-        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
-
       - name: Deploy to Vercel
         id: deploy
-        run: |
-          URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
-          echo "url=$URL" >> $GITHUB_OUTPUT
+        uses: ./.github/actions/vercel-deploy
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          environment: preview
 
       - name: Comment preview URL on PR
         uses: actions/github-script@v7
