@@ -25,7 +25,7 @@ export class AdminAnnouncementsPage {
 
   async goto() {
     await this.page.goto('/admin/announcements');
-    await this.page.waitForLoadState('networkidle');
+    await this.newAnnouncementBtn.waitFor({ state: 'visible' });
   }
 
   getEditBtns() {
