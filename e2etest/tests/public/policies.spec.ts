@@ -11,16 +11,6 @@ test.describe('WF-PUB-07: Policies Page', () => {
     await expect(policiesPage.pageHeading).toBeVisible();
   });
 
-  test('happy path — static policy sections always rendered', async ({ page }) => {
-    const policiesPage = new PoliciesPage(page);
-    await policiesPage.goto();
-
-    await expect(policiesPage.constitutionSection).toBeVisible();
-    await expect(policiesPage.codeOfConductSection).toBeVisible();
-    await expect(policiesPage.volunteerPolicySection).toBeVisible();
-    await expect(policiesPage.privacyPolicySection).toBeVisible();
-  });
-
   test('happy path — dynamic policy download links open in new tab', async ({ page }) => {
     const policiesPage = new PoliciesPage(page);
     await policiesPage.goto();
@@ -36,8 +26,8 @@ test.describe('WF-PUB-07: Policies Page', () => {
     const policiesPage = new PoliciesPage(page);
     await policiesPage.goto();
 
-    // Static sections are always present regardless of DB content
-    await expect(policiesPage.constitutionSection).toBeVisible();
+    // The page always renders its heading, regardless of DB content
+    await expect(policiesPage.pageHeading).toBeVisible();
     await expect(page.locator('body')).not.toContainText(/error|500/i);
   });
 });

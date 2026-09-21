@@ -10,7 +10,12 @@ test.describe('WF-PUB-06: Article Detail — Open Graph & Facebook Share', () =>
   const excerpt = 'A short excerpt used for the Open Graph description.';
   let articleUrl = '';
 
-  test.beforeAll(async ({ browser }) => {
+  test.beforeAll(async ({ browser }, testInfo) => {
+    // The full create → publish → navigate → find-link sequence against a
+    // live (non-local) deployment doesn't reliably fit in the default 30s
+    // hook timeout — give it more headroom.
+    testInfo.setTimeout(60000);
+
     const context = await browser.newContext({ storageState: 'tests/.auth/admin.json' });
     const page = await context.newPage();
     page.on('dialog', (dialog) => dialog.dismiss());

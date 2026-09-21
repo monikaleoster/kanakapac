@@ -68,11 +68,11 @@ test.describe('WF-ADM-02: Admin Logout', () => {
     await expect(page).toHaveURL(/\/admin/);
 
     // Navigating to a protected route after logout should redirect to login.
-    // Use Promise.all to handle the server-side redirect without ERR_ABORTED.
-    await Promise.all([
-      page.waitForURL(/\/admin/),
-      page.goto('/admin/dashboard'),
-    ]);
+    // The server-side redirect can abort the original navigation before it
+    // resolves, so page.goto() itself may reject with net::ERR_ABORTED even
+    // though the redirect completes successfully — ignore that rejection and
+    // assert on the final URL instead.
+    await page.goto('/admin/dashboard').catch(() => {});
     await expect(page).toHaveURL(/\/admin/);
   });
 });
