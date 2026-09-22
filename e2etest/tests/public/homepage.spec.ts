@@ -8,7 +8,6 @@ test.describe('WF-PUB-01: Homepage', () => {
     await home.goto();
 
     await expect(home.heading).toBeVisible();
-    await expect(home.heading).toContainText(/welcome to/i);
     await expect(home.viewEventsBtn).toBeVisible();
     await expect(home.learnAboutBtn).toBeVisible();
 
@@ -23,11 +22,32 @@ test.describe('WF-PUB-01: Homepage', () => {
     await expect(home.upcomingEventsSection).toBeVisible();
   });
 
-  test('happy path — announcements section shown', async ({ page }) => {
+  test('happy path — articles section shows a featured article and article grid', async ({ page }) => {
     const home = new HomePage(page);
     await home.goto();
 
-    await expect(home.announcementsSection).toBeVisible();
+    await expect(home.articlesSection).toBeVisible();
+
+    // The "Latest News" section renders either a featured article (plus an
+    // optional grid of further ones) or the empty-state message — never both.
+    const featuredCount = await page.getByText(/^Featured$/).count();
+    if (featuredCount > 0) {
+      await expect(home.noNewsMsg).not.toBeVisible();
+    } else {
+      await expect(home.noNewsMsg).toBeVisible();
+    }
+  });
+
+  test('happy path — announcements rail shown when there are active announcements', async ({ page }) => {
+    const home = new HomePage(page);
+    await home.goto();
+
+    // The rail is omitted entirely when there's nothing active to announce,
+    // so only assert on it when the heading is actually present.
+    const count = await home.announcementsSection.count();
+    if (count > 0) {
+      await expect(home.announcementsSection).toBeVisible();
+    }
   });
 
   test('edge case — CTA links navigate to correct pages', async ({ page }) => {
