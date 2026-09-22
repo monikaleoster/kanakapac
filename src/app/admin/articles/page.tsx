@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { Article } from "@/lib/types";
 import { uploadImage } from "@/lib/uploadImage";
 import ArticleCoverImage from "@/components/ArticleCoverImage";
+import ExternalCoverImageSpec from "@/components/ExternalCoverImageSpec";
 
 const ArticleEditor = dynamic(() => import("@/components/ArticleEditor"), {
   ssr: false,
@@ -372,7 +373,7 @@ export default function AdminArticlesPage() {
 
               <div className="mb-3 p-3 border border-gray-200 rounded-md bg-gray-50">
                 <label htmlFor="article-cover-prompt" className="block text-sm font-medium text-gray-700 mb-1">
-                  AI cover image prompt
+                  Generate with OpenAI (in-app)
                 </label>
                 <textarea
                   id="article-cover-prompt"
@@ -407,6 +408,8 @@ export default function AdminArticlesPage() {
                   <p className="text-sm text-red-600 mt-2">{coverGenerationError}</p>
                 )}
               </div>
+
+              <ExternalCoverImageSpec title={form.title} />
 
               <input
                 id="article-cover"
