@@ -11,12 +11,15 @@ test.describe('WF-PUB-06: Article Detail — Open Graph & Facebook Share', () =>
   let articleUrl = '';
 
   test.beforeAll(async ({ browser }, testInfo) => {
-    // The full create → publish → navigate → find-link sequence against a
-    // live (non-local) deployment doesn't reliably fit in the default 30s
-    // hook timeout — give it more headroom. 60s still occasionally isn't
-    // enough against a live preview deployment/shared staging DB, so this
-    // has extra margin on top of the ~15-20s the flow normally takes.
-    testInfo.setTimeout(90000);
+    // Bumping this timeout repeatedly hasn't fixed the flake (see git log)
+    // because the actual bottleneck wasn't slowness — it was discovering
+    // the new article's URL by re-navigating to /articles and scraping for
+    // a matching link. That page's list only reflects the write once it
+    // re-queries the DB, and against a live preview deployment that round
+    // trip raced the rest of the setup often enough to blow even a 90s
+    // budget. The create API response already returns the article's id,
+    // so we build the URL from that directly instead of scraping for it.
+    testInfo.setTimeout(60000);
 
     const context = await browser.newContext({ storageState: 'tests/.auth/admin.json' });
     const page = await context.newPage();
@@ -29,7 +32,13 @@ test.describe('WF-PUB-06: Article Detail — Open Graph & Facebook Share', () =>
     await page.getByLabel(/author/i).fill('E2E Author');
     await page.getByLabel(/excerpt/i).fill(excerpt);
 
-    await page.getByRole('button', { name: /save as draft/i }).click();
+    const [createResponse] = await Promise.all([
+      page.waitForResponse(
+        (res) => res.url().includes('/api/articles') && res.request().method() === 'POST'
+      ),
+      page.getByRole('button', { name: /save as draft/i }).click(),
+    ]);
+    const { id: articleId } = await createResponse.json();
     await expect(page.getByText(articleTitle).first()).toBeVisible({ timeout: 8000 });
 
     const row = page
@@ -37,12 +46,15 @@ test.describe('WF-PUB-06: Article Detail — Open Graph & Facebook Share', () =>
       .filter({ hasText: articleTitle })
       .filter({ has: page.getByRole('button', { name: 'Publish' }) })
       .last();
-    await row.getByRole('button', { name: 'Publish' }).click();
+    await Promise.all([
+      page.waitForResponse(
+        (res) => res.url().includes('/api/articles') && res.request().method() === 'PUT'
+      ),
+      row.getByRole('button', { name: 'Publish' }).click(),
+    ]);
     await expect(page.getByText('Published').first()).toBeVisible({ timeout: 8000 });
 
-    await page.goto('/articles');
-    const link = page.locator('a', { hasText: articleTitle }).first();
-    articleUrl = (await link.getAttribute('href')) ?? '';
+    articleUrl = `/articles/${articleId}`;
 
     await context.close();
   });
