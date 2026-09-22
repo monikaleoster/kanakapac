@@ -23,6 +23,7 @@ export default function AdminPoliciesPage() {
     const [form, setForm] = useState(emptyPolicy);
     const [showForm, setShowForm] = useState(false);
     const [uploadError, setUploadError] = useState("");
+    const [deleteId, setDeleteId] = useState<string | null>(null);
 
     useEffect(() => {
         fetchPolicies();
@@ -101,9 +102,14 @@ export default function AdminPoliciesPage() {
         fetchPolicies();
     }
 
-    async function handleDelete(id: string) {
-        if (!confirm("Are you sure you want to delete this policy?")) return;
-        await fetch(`/api/policies?id=${id}`, { method: "DELETE" });
+    function handleDelete(id: string) {
+        setDeleteId(id);
+    }
+
+    async function handleConfirmDelete() {
+        if (!deleteId) return;
+        await fetch(`/api/policies?id=${deleteId}`, { method: "DELETE" });
+        setDeleteId(null);
         fetchPolicies();
     }
 
@@ -219,6 +225,7 @@ export default function AdminPoliciesPage() {
                 {policies.map((item) => (
                     <div
                         key={item.id}
+                        data-testid="policy-item"
                         className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 flex items-center justify-between"
                     >
                         <div>
@@ -248,6 +255,32 @@ export default function AdminPoliciesPage() {
                     </p>
                 )}
             </div>
+
+            {/* Delete Confirmation Modal */}
+            {deleteId && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
+                        <h3 className="text-lg font-bold text-gray-900 mb-2">Confirm Deletion</h3>
+                        <p className="text-gray-600 mb-6">Are you sure you want to delete this policy? This action cannot be undone.</p>
+                        <div className="flex justify-end gap-3">
+                            <button
+                                data-testid="cancel-delete-btn"
+                                onClick={() => setDeleteId(null)}
+                                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md font-medium transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                data-testid="confirm-delete-btn"
+                                onClick={handleConfirmDelete}
+                                className="px-4 py-2 bg-red-600 text-white rounded-md font-medium hover:bg-red-700 transition-colors"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

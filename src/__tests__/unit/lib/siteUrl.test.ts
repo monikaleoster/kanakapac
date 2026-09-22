@@ -1,8 +1,10 @@
 describe('getAbsoluteUrl', () => {
-    const ORIGINAL_ENV = process.env.NEXT_PUBLIC_BASE_URL;
+    const ORIGINAL_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+    const ORIGINAL_VERCEL_URL = process.env.VERCEL_URL;
 
     afterEach(() => {
-        process.env.NEXT_PUBLIC_BASE_URL = ORIGINAL_ENV;
+        process.env.NEXT_PUBLIC_BASE_URL = ORIGINAL_BASE_URL;
+        process.env.VERCEL_URL = ORIGINAL_VERCEL_URL;
         jest.resetModules();
     });
 
@@ -34,8 +36,20 @@ describe('getAbsoluteUrl', () => {
         );
     });
 
-    it('falls back to localhost when NEXT_PUBLIC_BASE_URL is unset', async () => {
+    it('falls back to VERCEL_URL when NEXT_PUBLIC_BASE_URL is unset', async () => {
         delete process.env.NEXT_PUBLIC_BASE_URL;
+        process.env.VERCEL_URL = 'kanakapac-abc123.vercel.app';
+        jest.resetModules();
+        const { getAbsoluteUrl } = await import('@/lib/siteUrl');
+
+        expect(getAbsoluteUrl('/articles/abc')).toBe(
+            'https://kanakapac-abc123.vercel.app/articles/abc'
+        );
+    });
+
+    it('falls back to localhost when neither NEXT_PUBLIC_BASE_URL nor VERCEL_URL is set', async () => {
+        delete process.env.NEXT_PUBLIC_BASE_URL;
+        delete process.env.VERCEL_URL;
         jest.resetModules();
         const { getAbsoluteUrl } = await import('@/lib/siteUrl');
 

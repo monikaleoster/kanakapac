@@ -27,6 +27,8 @@ export default function AdminArticlesPage() {
   const [form, setForm] = useState(emptyForm);
   const [showForm, setShowForm] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [notifyArticle, setNotifyArticle] = useState<Article | null>(null);
+  const [notifying, setNotifying] = useState(false);
   const [coverUploading, setCoverUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [coverPrompt, setCoverPrompt] = useState("");
@@ -130,22 +132,24 @@ export default function AdminArticlesPage() {
     }
   }
 
-  async function notifySubscribersIfConfirmed(article: Article) {
-    const shouldNotify = confirm(
-      "Article published! Would you like to email this to all subscribers?"
-    );
-    if (shouldNotify) {
+  async function handleConfirmNotify() {
+    if (!notifyArticle) return;
+    setNotifying(true);
+    try {
       await fetch("/api/send-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: "article",
-          subject: `New Article: ${article.title}`,
-          title: article.title,
-          author: article.author,
-          body: article.body,
+          subject: `New Article: ${notifyArticle.title}`,
+          title: notifyArticle.title,
+          author: notifyArticle.author,
+          body: notifyArticle.body,
         }),
       });
+    } finally {
+      setNotifying(false);
+      setNotifyArticle(null);
     }
   }
 
@@ -179,7 +183,7 @@ export default function AdminArticlesPage() {
         await fetchArticles();
 
         if (publishing) {
-          await notifySubscribersIfConfirmed(updated);
+          setNotifyArticle(updated);
         }
       } else {
         await fetch("/api/articles", {
@@ -213,7 +217,7 @@ export default function AdminArticlesPage() {
       setForm(emptyForm);
       await fetchArticles();
 
-      await notifySubscribersIfConfirmed(published);
+      setNotifyArticle(published);
     } finally {
       setSaving(false);
     }
@@ -272,6 +276,34 @@ export default function AdminArticlesPage() {
                 className="px-4 py-2 bg-red-600 text-white rounded-md font-medium hover:bg-red-700 transition-colors"
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notify Subscribers Modal */}
+      {notifyArticle && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Article Published!</h3>
+            <p className="text-gray-600 mb-6">Would you like to email this to all subscribers?</p>
+            <div className="flex justify-end gap-3">
+              <button
+                data-testid="skip-notify-btn"
+                onClick={() => setNotifyArticle(null)}
+                disabled={notifying}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md font-medium transition-colors disabled:opacity-50"
+              >
+                No Thanks
+              </button>
+              <button
+                data-testid="confirm-notify-btn"
+                onClick={handleConfirmNotify}
+                disabled={notifying}
+                className="px-4 py-2 bg-primary-600 text-white rounded-md font-medium hover:bg-primary-700 disabled:opacity-50"
+              >
+                {notifying ? "Sending..." : "Yes, Notify Subscribers"}
               </button>
             </div>
           </div>

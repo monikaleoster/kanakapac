@@ -166,9 +166,14 @@ export default function AdminSubscribersPage() {
 
             {/* Delete Modal */}
             {deleteId && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="confirm-removal-heading"
+                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+                >
                     <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-auto shadow-xl">
-                        <h3 className="text-lg font-bold text-gray-900 mb-2">Confirm Removal</h3>
+                        <h3 id="confirm-removal-heading" className="text-lg font-bold text-gray-900 mb-2">Confirm Removal</h3>
                         <p className="text-gray-600 mb-6">
                             Are you sure you want to remove <strong>{deleteId}</strong>?
                         </p>

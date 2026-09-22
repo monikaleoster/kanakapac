@@ -46,32 +46,6 @@ jobs:
           psql "$DATABASE_URL" -c "\dt" | grep -E "events|rsvps|minutes|announcements|policies|team_members|subscribers|settings"
           psql "$DATABASE_URL" -c "\d events" | grep -E "rsvp_enabled|ticket_url"
 
-  migrate-staging-db:
-    name: Migrate Staging Database
-    runs-on: ubuntu-latest
-    needs: test-migrations
-    # Skip on main — staging.yml handles that push
-    if: github.ref != 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install PostgreSQL client
-        run: sudo apt-get install -y postgresql-client
-
-      - name: Apply all migrations to staging Supabase
-        env:
-          PGSSLMODE: require
-        run: |
-          for f in $(ls supabase/migrations/*.sql | sort); do
-            echo "Applying $f..."
-            psql "${{ secrets.CI_DATABASE_URL }}" -f "$f" -v ON_ERROR_STOP=1
-          done
-
-      - name: Reload PostgREST schema cache
-        env:
-          PGSSLMODE: require
-        run: psql "${{ secrets.CI_DATABASE_URL }}" -c "NOTIFY pgrst, 'reload schema';"
-
   lint-and-typecheck:
     name: Lint & Type Check
     runs-on: ubuntu-latest
@@ -92,10 +66,27 @@ jobs:
       - name: Run TypeScript type check
         run: npx tsc --noEmit
 
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Jest
+        run: npm test
+
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: lint-and-typecheck
+    needs: [lint-and-typecheck, unit-tests]
     env:
       # Placeholder values — build does not query the DB at build time
       NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
@@ -124,3 +115,93 @@ jobs:
           name: nextjs-build
           path: .next/
           retention-days: 1
+
+  # The jobs below only run for feature/claude branches and their PRs — never
+  # for a push directly to main, which only needs the quality gates above.
+  # Production is a separate, manually-triggered workflow (production.yml).
+
+  migrate-staging-db:
+    name: Migrate Staging Database
+    runs-on: ubuntu-latest
+    needs: [test-migrations, lint-and-typecheck, unit-tests, build]
+    if: github.ref != 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Migrate staging database
+        uses: ./.github/actions/migrate-db
+        with:
+          database-url: ${{ secrets.CI_DATABASE_URL }}
+
+  deploy-preview:
+    name: Deploy Preview
+    runs-on: ubuntu-latest
+    needs: migrate-staging-db
+    if: github.ref != 'refs/heads/main'
+    permissions:
+      contents: read
+      pull-requests: write
+    outputs:
+      url: ${{ steps.deploy.outputs.url }}
+    environment:
+      name: Preview
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Vercel
+        id: deploy
+        uses: ./.github/actions/vercel-deploy
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          environment: preview
+
+      - name: Comment preview URL on PR
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `✅ Preview deploy ready: ${{ steps.deploy.outputs.url }}`
+            })
+
+  e2e-tests:
+    name: E2E Tests (Playwright)
+    runs-on: ubuntu-latest
+    needs: deploy-preview
+    if: github.ref != 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: e2etest/package-lock.json
+
+      - name: Install Playwright dependencies
+        working-directory: e2etest
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: e2etest
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        working-directory: e2etest
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ needs.deploy-preview.outputs.url }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: npm test
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2etest/playwright-report/
+          retention-days: 7

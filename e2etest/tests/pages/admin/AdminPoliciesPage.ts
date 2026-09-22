@@ -34,9 +34,7 @@ export class AdminPoliciesPage {
   }
 
   getPolicyListItems() {
-    return this.page.locator('li, tr, article').filter({
-      has: this.page.getByRole('button', { name: /edit/i }),
-    });
+    return this.page.locator('[data-testid="policy-item"]');
   }
 
   isSubmitDisabled() {

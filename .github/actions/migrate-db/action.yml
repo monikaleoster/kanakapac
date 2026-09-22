@@ -1,0 +1,32 @@
+name: Migrate Supabase DB
+description: Applies all pending SQL migrations to a Supabase Postgres database and reloads the PostgREST schema cache.
+
+inputs:
+  database-url:
+    description: Postgres connection string to migrate.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Install PostgreSQL client
+      shell: bash
+      run: sudo apt-get install -y postgresql-client
+
+    - name: Apply all migrations in order
+      shell: bash
+      env:
+        DATABASE_URL: ${{ inputs.database-url }}
+        PGSSLMODE: require
+      run: |
+        for f in $(ls supabase/migrations/*.sql | sort); do
+          echo "Applying $f..."
+          psql "$DATABASE_URL" -f "$f" -v ON_ERROR_STOP=1
+        done
+
+    - name: Reload PostgREST schema cache
+      shell: bash
+      env:
+        DATABASE_URL: ${{ inputs.database-url }}
+        PGSSLMODE: require
+      run: psql "$DATABASE_URL" -c "NOTIFY pgrst, 'reload schema';"
