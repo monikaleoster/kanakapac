@@ -12,7 +12,7 @@ export class AdminSubscribersPage {
     this.page = page;
     this.copyEmailsBtn = page.getByRole('button', { name: /copy all emails/i });
     this.sendUpdateBtn = page.getByRole('button', { name: /send update/i });
-    this.subscriberCountText = page.getByText(/\d+ subscriber/i);
+    this.subscriberCountText = page.getByText(/subscribers?[:\s]*\d+/i);
     this.confirmDeleteBtn = page.getByRole('button', { name: /confirm|yes|remove/i }).last();
     this.cancelDeleteBtn = page.getByRole('button', { name: /cancel|no/i });
   }
