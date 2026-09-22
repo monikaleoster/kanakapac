@@ -13,8 +13,10 @@ test.describe('WF-PUB-06: Article Detail — Open Graph & Facebook Share', () =>
   test.beforeAll(async ({ browser }, testInfo) => {
     // The full create → publish → navigate → find-link sequence against a
     // live (non-local) deployment doesn't reliably fit in the default 30s
-    // hook timeout — give it more headroom.
-    testInfo.setTimeout(60000);
+    // hook timeout — give it more headroom. 60s still occasionally isn't
+    // enough against a live preview deployment/shared staging DB, so this
+    // has extra margin on top of the ~15-20s the flow normally takes.
+    testInfo.setTimeout(90000);
 
     const context = await browser.newContext({ storageState: 'tests/.auth/admin.json' });
     const page = await context.newPage();
