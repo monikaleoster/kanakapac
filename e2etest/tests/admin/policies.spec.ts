@@ -172,8 +172,7 @@ test.describe('WF-ADM-14: Policies — Delete', () => {
     await expect(policiesPage.confirmDeleteBtn).toBeVisible();
     await policiesPage.confirmDeleteBtn.click();
 
-    const itemsAfter = await policiesPage.getPolicyListItems().count();
-    expect(itemsAfter).toBe(itemsBefore - 1);
+    await expect(policiesPage.getPolicyListItems()).toHaveCount(itemsBefore - 1);
   });
 
   test('edge case — cancel delete keeps policy in list', async ({ page }) => {

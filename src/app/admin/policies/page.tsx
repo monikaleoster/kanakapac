@@ -225,6 +225,7 @@ export default function AdminPoliciesPage() {
                 {policies.map((item) => (
                     <div
                         key={item.id}
+                        data-testid="policy-item"
                         className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 flex items-center justify-between"
                     >
                         <div>
