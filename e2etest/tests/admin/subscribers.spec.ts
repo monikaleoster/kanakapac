@@ -58,7 +58,7 @@ test.describe('WF-ADM-20: Subscribers — Remove', () => {
     await expect(modal.getByText('remove-test@example.com')).toBeVisible();
 
     await subscribersPage.confirmDeleteBtn.click();
-    await expect(page.getByText('remove-test@example.com')).not.toBeVisible({ timeout: 8000 });
+    await expect(row).not.toBeVisible({ timeout: 8000 });
   });
 
   test('edge case — cancel remove keeps subscriber in list', async ({ page }) => {
