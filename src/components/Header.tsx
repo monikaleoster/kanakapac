@@ -19,7 +19,7 @@ export default async function Header() {
               </div>
             )}
             <div>
-              <h1 className="text-xl font-bold leading-tight">{settings.pacName}</h1>
+              <p className="text-xl font-bold leading-tight">{settings.pacName}</p>
               <p className="text-xs text-primary-200 leading-tight">
                 Parent Advisory Council
               </p>
