@@ -21,7 +21,7 @@ jobs:
     needs: migrate-production-db
     environment:
       name: Production
-      url: https://kanakapac.ca
+      url: https://www.kanakacreekpac.ca
     steps:
       - uses: actions/checkout@v4
 

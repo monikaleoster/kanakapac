@@ -10,15 +10,20 @@ export class HomePage {
   readonly announcementsSection: Locator;
   readonly noUpcomingEventsMsg: Locator;
 
+  readonly articlesSection: Locator;
+  readonly noNewsMsg: Locator;
+
   constructor(page: Page) {
     this.page = page;
-    this.heading = page.getByRole('heading', { level: 1, name: /welcome to/i });
-    this.viewEventsBtn = page.getByRole('link', { name: /view upcoming events/i });
-    this.learnAboutBtn = page.getByRole('link', { name: /learn about pac/i });
+    this.heading = page.getByRole('heading', { level: 1 });
+    this.viewEventsBtn = page.getByRole('link', { name: /view events/i });
+    this.learnAboutBtn = page.getByRole('link', { name: /about pac/i });
     this.urgentBanner = page.locator('[class*="bg-red"], [class*="urgent"]').first();
     this.upcomingEventsSection = page.getByRole('heading', { name: /upcoming events/i }).first();
-    this.announcementsSection = page.getByRole('heading', { name: /recent announcements/i }).first();
-    this.noUpcomingEventsMsg = page.getByText(/no upcoming events scheduled/i);
+    this.announcementsSection = page.getByRole('heading', { name: /^announcements$/i }).first();
+    this.noUpcomingEventsMsg = page.getByText(/no upcoming events at this time/i);
+    this.articlesSection = page.getByRole('heading', { name: /latest news/i }).first();
+    this.noNewsMsg = page.getByText(/no news posted yet/i);
   }
 
   async goto() {

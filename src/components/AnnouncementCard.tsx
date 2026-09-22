@@ -10,6 +10,7 @@ export default function AnnouncementCard({
 
   return (
     <div
+      data-testid="announcement-card"
       className={`rounded-lg shadow-md border p-6 ${isUrgent
           ? "bg-red-50 border-red-200"
           : "bg-white border-gray-100"
