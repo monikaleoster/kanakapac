@@ -17,6 +17,7 @@ const TEST_MEMBER_NAMES = [
   'Default Order Member',
   'Photo Member',
   'No Photo Member',
+  'Long Bio Member',
 ];
 
 // 1x1 transparent PNG
@@ -94,6 +95,9 @@ test.describe('WF-ADM-15: Team — Create', () => {
 });
 
 test.describe('WF-ADM-19: Team — Photo', () => {
+  // Serial: afterAll cleans up by name, which would race across parallel workers
+  test.describe.configure({ mode: 'serial' });
+
   test('happy path — uploaded photo shows on About page with name as alt text', async ({ page }) => {
     const teamPage = new AdminTeamPage(page);
     await teamPage.goto();
@@ -124,6 +128,42 @@ test.describe('WF-ADM-19: Team — Photo', () => {
     await expect(card.getByRole('img')).toHaveCount(0);
   });
 
+  test('edge case — six-sentence bio is shown in full without breaking the card layout', async ({ page }) => {
+    const longBio =
+      'First sentence about this member. Second sentence about their background. ' +
+      'Third sentence about their work with the PAC. Fourth sentence about the committees they lead. ' +
+      'Fifth sentence about their goals for the year. Sixth and final sentence inviting parents to get in touch.';
+
+    const teamPage = new AdminTeamPage(page);
+    await teamPage.goto();
+
+    await teamPage.addMemberBtn.click();
+    await teamPage.fillMemberForm({ ...TEST_MEMBER, name: 'Long Bio Member', bio: longBio });
+    await teamPage.photoInput.setInputFiles({ name: 'photo.png', mimeType: 'image/png', buffer: TINY_PNG });
+    await expect(page.getByRole('button', { name: /remove photo/i })).toBeVisible({ timeout: 10000 });
+    await teamPage.submitBtn.click();
+    await expect(page.getByText('Long Bio Member').first()).toBeVisible({ timeout: 8000 });
+
+    await page.goto('/about');
+    const card = page.getByTestId('team-member').filter({ hasText: 'Long Bio Member' });
+    await expect(card.getByText(/Sixth and final sentence/)).toBeVisible();
+
+    // Photo keeps its size instead of being squeezed by the long text
+    const photoBox = await card.getByRole('img', { name: 'Long Bio Member' }).boundingBox();
+    expect(photoBox?.width).toBeGreaterThanOrEqual(80);
+    expect(photoBox?.height).toBeGreaterThanOrEqual(80);
+
+    // Text stays inside the card, and the page does not scroll sideways
+    const cardBox = await card.boundingBox();
+    const bioBox = await card.getByText(/Sixth and final sentence/).boundingBox();
+    expect(bioBox!.x + bioBox!.width).toBeLessThanOrEqual(cardBox!.x + cardBox!.width);
+    expect(bioBox!.y + bioBox!.height).toBeLessThanOrEqual(cardBox!.y + cardBox!.height);
+    const overflows = await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth
+    );
+    expect(overflows).toBe(false);
+  });
+
   test('edge case — non-image file is rejected with an error', async ({ page }) => {
     const teamPage = new AdminTeamPage(page);
     await teamPage.goto();
@@ -137,7 +177,7 @@ test.describe('WF-ADM-19: Team — Photo', () => {
     const res = await request.get('/api/team');
     const members: Array<{ id: string; name: string }> = await res.json();
     for (const member of members) {
-      if (member.name === 'Photo Member' || member.name === 'No Photo Member') {
+      if (['Photo Member', 'No Photo Member', 'Long Bio Member'].includes(member.name)) {
         await request.delete(`/api/team?id=${member.id}`);
       }
     }
