@@ -4,7 +4,7 @@ import TeamMemberAvatar from "@/components/TeamMemberAvatar";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "About - Kanaka PAC",
+  title: "Executive Team - Kanaka PAC",
   description:
     "Learn about the Kanaka Parent Advisory Council, our mission, and our executive team.",
 };

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { NavigationPage } from '../pages/NavigationPage';
 
-const NAV_LINKS = ['Home', 'Events', 'Minutes', 'Announcements', 'Policies', 'About', 'Contact', 'Admin'];
+const NAV_LINKS = ['Home', 'Events', 'Minutes', 'Announcements', 'Policies', 'Executive Team', 'Contact', 'Admin'];
 
 // WF-PUB-11: Navigate Site — Desktop
 test.describe('WF-PUB-11: Desktop Navigation', () => {
@@ -26,7 +26,7 @@ test.describe('WF-PUB-11: Desktop Navigation', () => {
     await nav.getNavLink('Minutes').click();
     await expect(page).toHaveURL(/\/minutes/);
 
-    await nav.getNavLink('About').click();
+    await nav.getNavLink('Executive Team').click();
     await expect(page).toHaveURL(/\/about/);
 
     await nav.getNavLink('Policies').click();
