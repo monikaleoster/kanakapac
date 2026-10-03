@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, role, bio, email, order } = body;
+    const { name, role, bio, email, order, photoUrl } = body;
 
     if (!name || !role) {
         return NextResponse.json(
@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
         role,
         bio: bio || "",
         email: email || "",
+        photoUrl: photoUrl || undefined,
         order: order || 0,
     };
 
@@ -42,7 +43,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, name, role, bio, email, order } = body;
+    const { id, name, role, bio, email, order, photoUrl } = body;
 
     const existing = await getTeamMemberById(id);
     if (!existing) {
@@ -55,6 +56,7 @@ export async function PUT(request: NextRequest) {
         role: role || existing.role,
         bio: bio !== undefined ? bio : existing.bio,
         email: email !== undefined ? email : existing.email,
+        photoUrl: photoUrl !== undefined ? photoUrl || undefined : existing.photoUrl,
         order: order !== undefined ? order : existing.order,
     };
 

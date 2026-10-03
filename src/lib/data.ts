@@ -578,6 +578,7 @@ export async function getTeamMembers(): Promise<TeamMember[]> {
     role: item.role,
     bio: item.bio,
     email: item.email,
+    photoUrl: item.photo_url ?? undefined,
     order: item.sort_order
   }));
 }
@@ -601,6 +602,7 @@ export async function getTeamMemberById(id: string): Promise<TeamMember | undefi
     role: data.role,
     bio: data.bio,
     email: data.email,
+    photoUrl: data.photo_url ?? undefined,
     order: data.sort_order
   } : undefined;
 }
@@ -611,6 +613,7 @@ export async function saveTeamMember(member: TeamMember): Promise<void> {
     role: member.role,
     bio: member.bio,
     email: member.email,
+    photo_url: member.photoUrl ?? null,
     sort_order: member.order
   };
 

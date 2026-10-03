@@ -62,6 +62,7 @@ export interface TeamMember {
     role: string;
     bio: string;
     email?: string;
+    photoUrl?: string;
     order: number;
 }
 

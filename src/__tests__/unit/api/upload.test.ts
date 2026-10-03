@@ -57,6 +57,26 @@ describe('POST /api/upload', () => {
         expect(uploadBuffer).not.toHaveBeenCalled();
     });
 
+    it('accepts WebP in the image context', async () => {
+        (uploadBuffer as jest.Mock).mockResolvedValue('https://cdn.example.com/images/a.webp');
+        const formData = new FormData();
+        formData.append('file', makeFile('a.webp', 'image/webp'));
+
+        const res = await POST(makeRequest(formData, 'image'));
+
+        expect(res.status).toBe(200);
+    });
+
+    it('returns 413 for an image larger than 5MB', async () => {
+        const formData = new FormData();
+        formData.append('file', makeFile('big.png', 'image/png', 'x'.repeat(5 * 1024 * 1024 + 1)));
+
+        const res = await POST(makeRequest(formData, 'image'));
+
+        expect(res.status).toBe(413);
+        expect(uploadBuffer).not.toHaveBeenCalled();
+    });
+
     it('uploads to the images bucket for the image context and returns fileUrl', async () => {
         (uploadBuffer as jest.Mock).mockResolvedValue('https://cdn.example.com/images/a.png');
         const formData = new FormData();
