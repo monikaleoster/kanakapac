@@ -13,7 +13,7 @@ The two states of an Article's lifecycle. A Draft is saved but not publicly visi
 
 **Body** (Article):
 An Article's full rich-text content, stored as sanitized HTML with embedded inline images.
-_Avoid_: Content (reserved for the plain-string field on Announcement and Minutes)
+_Avoid_: Content (reserved for the plain-string field on Announcement)
 
 **Excerpt**:
 The short plain-text teaser for an Article shown on the listing page, distinct from its Body.
@@ -30,7 +30,7 @@ A short, time-sensitive notice with a priority and optional expiry. Always publi
 _Avoid_: Alert, notice
 
 **Minutes**:
-The record of a single PAC meeting, keyed by meeting date, stored as plain text.
+The record of a single PAC meeting, keyed by meeting date, backed by an uploaded document (PDF, DOC, DOCX, or TXT).
 _Avoid_: Meeting notes
 
 **Subscriber**:
