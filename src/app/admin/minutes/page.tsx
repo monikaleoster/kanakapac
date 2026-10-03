@@ -7,14 +7,14 @@ interface MinutesData {
   id: string;
   title: string;
   date: string;
-  content: string;
+  fileUrl: string;
   createdAt: string;
 }
 
 const emptyMinutes = {
   title: "",
   date: "",
-  content: "",
+  fileUrl: "",
 };
 
 export default function AdminMinutesPage() {
@@ -22,6 +22,7 @@ export default function AdminMinutesPage() {
   const [editing, setEditing] = useState<MinutesData | null>(null);
   const [form, setForm] = useState(emptyMinutes);
   const [showForm, setShowForm] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -40,15 +41,41 @@ export default function AdminMinutesPage() {
     setForm({
       title: item.title,
       date: item.date,
-      content: item.content,
+      fileUrl: item.fileUrl,
     });
+    setUploadError("");
     setShowForm(true);
   }
 
   function handleNew() {
     setEditing(null);
     setForm(emptyMinutes);
+    setUploadError("");
     setShowForm(true);
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/upload?context=document", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+
+      const data = await res.json();
+      setUploadError("");
+      setForm((prev) => ({ ...prev, fileUrl: data.fileUrl }));
+    } catch (error) {
+      console.error("Upload error:", error);
+      setUploadError("File upload failed. Invalid file type.");
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -71,6 +98,7 @@ export default function AdminMinutesPage() {
     setShowForm(false);
     setEditing(null);
     setForm(emptyMinutes);
+    setUploadError("");
     fetchMinutes();
   }
 
@@ -170,27 +198,31 @@ export default function AdminMinutesPage() {
               </div>
             </div>
             <div>
-              <label htmlFor="min-content" className="block text-sm font-medium text-gray-700 mb-1">
-                Content (Markdown supported)
+              <label htmlFor="min-file" className="block text-sm font-medium text-gray-700 mb-1">
+                Upload Document (PDF, DOC, DOCX, TXT)
               </label>
-              <textarea
-                id="min-content"
-                value={form.content}
-                onChange={(e) => setForm({ ...form, content: e.target.value })}
-                rows={12}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-sm"
-                placeholder="## Attendance&#10;&#10;Present: ...&#10;&#10;## Agenda Items&#10;&#10;### 1. Treasurer's Report&#10;- ..."
-                required
+              <input
+                id="min-file"
+                type="file"
+                accept=".pdf,.doc,.docx,.txt"
+                onChange={handleFileChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                required={!form.fileUrl}
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Use Markdown formatting: ## for headings, - for bullet points,
-                **bold**, etc.
-              </p>
+              {form.fileUrl && (
+                <p className="mt-1 text-sm text-green-600">
+                  File uploaded: {form.fileUrl.split("/").pop()}
+                </p>
+              )}
+              {uploadError && (
+                <p className="mt-1 text-sm text-red-600">{uploadError}</p>
+              )}
             </div>
             <div className="flex gap-3">
               <button
                 type="submit"
                 className="bg-primary-600 text-white px-4 py-2 rounded-md font-medium hover:bg-primary-700"
+                disabled={!form.fileUrl}
               >
                 {editing ? "Update Minutes" : "Post Minutes"}
               </button>
@@ -199,6 +231,7 @@ export default function AdminMinutesPage() {
                 onClick={() => {
                   setShowForm(false);
                   setEditing(null);
+                  setUploadError("");
                 }}
                 className="text-gray-600 px-4 py-2 rounded-md hover:bg-gray-100"
               >
@@ -214,11 +247,24 @@ export default function AdminMinutesPage() {
         {minutes.map((item) => (
           <div
             key={item.id}
+            data-testid="minutes-item"
             className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 flex items-center justify-between"
           >
             <div>
               <h3 className="font-medium text-gray-900">{item.title}</h3>
               <p className="text-sm text-gray-500">{item.date}</p>
+              {item.fileUrl ? (
+                <a
+                  href={item.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-primary-600 hover:underline mt-1 inline-block"
+                >
+                  View Document
+                </a>
+              ) : (
+                <p className="text-xs text-gray-400 italic mt-1">No document yet</p>
+              )}
             </div>
             <div className="flex gap-2">
               <button

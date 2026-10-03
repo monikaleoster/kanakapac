@@ -23,7 +23,7 @@ export interface Minutes {
     id: string;
     title: string;
     date: string;
-    content?: string;
+    fileUrl: string;
     createdAt: string;
 }
 

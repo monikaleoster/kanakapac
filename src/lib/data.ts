@@ -200,7 +200,7 @@ export async function getMinutes(): Promise<Minutes[]> {
     id: item.id,
     title: item.title,
     date: item.date,
-    content: item.content,
+    fileUrl: item.file_url ?? "",
     createdAt: item.created_at
   }));
 }
@@ -222,7 +222,7 @@ export async function getMinutesById(id: string): Promise<Minutes | undefined> {
     id: data.id,
     title: data.title,
     date: data.date,
-    content: data.content,
+    fileUrl: data.file_url ?? "",
     createdAt: data.created_at
   } : undefined;
 }
@@ -231,7 +231,7 @@ export async function saveMinutes(minutes: Minutes): Promise<void> {
   const payload = {
     title: minutes.title,
     date: minutes.date,
-    content: minutes.content,
+    file_url: minutes.fileUrl,
     created_at: minutes.createdAt || new Date().toISOString()
   };
 

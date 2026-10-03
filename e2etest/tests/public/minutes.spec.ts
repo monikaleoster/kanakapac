@@ -31,6 +31,17 @@ test.describe('WF-PUB-04: Minutes Archive', () => {
     }
   });
 
+  test('happy path — "View Document" link has target=_blank where present', async ({ page }) => {
+    const minutesPage = new MinutesPage(page);
+    await minutesPage.goto();
+
+    const links = minutesPage.getViewDocumentLinks();
+    const count = await links.count();
+    if (count > 0) {
+      await expect(links.first()).toHaveAttribute('target', '_blank');
+    }
+  });
+
   test('happy path — clicking a minutes card navigates to detail page', async ({ page }) => {
     const minutesPage = new MinutesPage(page);
     await minutesPage.goto();
@@ -55,18 +66,6 @@ test.describe('WF-PUB-04: Minutes Archive', () => {
     const hasEmptyState = await minutesPage.noMinutesMsg.isVisible().catch(() => false);
     expect(hasCards || hasEmptyState).toBeTruthy();
   });
-
-  test('edge case — content preview strips markdown characters', async ({ page }) => {
-    const minutesPage = new MinutesPage(page);
-    await minutesPage.goto();
-
-    const cards = minutesPage.getMinutesCards();
-    const count = await cards.count();
-    if (count > 0) {
-      const text = await cards.first().textContent() ?? '';
-      expect(text.trimStart()).not.toMatch(/^[#*]/);
-    }
-  });
 });
 
 // WF-PUB-05: Read Meeting Minutes Detail
@@ -86,7 +85,7 @@ test.describe('WF-PUB-05: Minutes Detail', () => {
     }
   });
 
-  test('happy path — title and content rendered', async ({ page }) => {
+  test('happy path — title and "View Document" link or no-document fallback rendered', async ({ page }) => {
     await page.goto('/minutes');
     const link = page.locator('a[href*="/minutes/"]').first();
     const hasLink = await link.isVisible().catch(() => false);
@@ -97,7 +96,25 @@ test.describe('WF-PUB-05: Minutes Detail', () => {
 
       const detailPage = new MinutesDetailPage(page);
       await expect(detailPage.getTitle()).toBeVisible();
-      await expect(detailPage.contentArea).toBeVisible();
+
+      const hasViewDocument = await detailPage.getViewDocumentLink().isVisible().catch(() => false);
+      const hasNoDocumentFallback = await page.getByText(/no document yet/i).isVisible().catch(() => false);
+      expect(hasViewDocument || hasNoDocumentFallback).toBeTruthy();
+    }
+  });
+
+  test('edge case — "View Document" link opens in a new tab', async ({ page }) => {
+    await page.goto('/minutes');
+    const link = page.locator('a[href*="/minutes/"]').first();
+    const hasLink = await link.isVisible().catch(() => false);
+
+    if (hasLink) {
+      await link.click();
+      const detailPage = new MinutesDetailPage(page);
+      const viewDocumentLink = detailPage.getViewDocumentLink();
+      if (await viewDocumentLink.isVisible().catch(() => false)) {
+        await expect(viewDocumentLink).toHaveAttribute('target', '_blank');
+      }
     }
   });
 

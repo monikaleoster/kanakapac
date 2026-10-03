@@ -18,4 +18,8 @@ export class MinutesDetailPage {
   getTitle() {
     return this.page.getByRole('heading').first();
   }
+
+  getViewDocumentLink() {
+    return this.page.getByRole('link', { name: /view document/i });
+  }
 }

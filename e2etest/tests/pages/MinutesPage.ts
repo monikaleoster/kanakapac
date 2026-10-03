@@ -18,9 +18,10 @@ export class MinutesPage {
   }
 
   getMinutesCards() {
-    return this.page.locator('article, [data-testid="minutes-card"], .minutes-card, li').filter({
-      has: this.page.locator('h2, h3'),
-    });
+    return this.page.locator('[data-testid="minutes-card"]');
   }
 
+  getViewDocumentLinks() {
+    return this.page.getByRole('link', { name: /view document/i });
+  }
 }

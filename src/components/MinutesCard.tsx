@@ -18,11 +18,18 @@ export default function MinutesCard({ minutes }: { minutes: Minutes }) {
         </div>
       </div>
 
-      <Link href={`/minutes/${minutes.id}`}>
-        <p className="text-sm text-gray-600 line-clamp-2 hover:text-primary-600">
-          {minutes.content?.replace(/[#*\n]/g, " ").substring(0, 150)}...
-        </p>
-      </Link>
+      {minutes.fileUrl ? (
+        <a
+          href={minutes.fileUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm text-primary-600 hover:text-primary-800 font-medium"
+        >
+          View Document
+        </a>
+      ) : (
+        <p className="text-sm text-gray-400 italic">No document yet</p>
+      )}
     </div>
   );
 }

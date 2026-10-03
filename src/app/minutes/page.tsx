@@ -18,8 +18,8 @@ export default async function MinutesPage() {
         Meeting Minutes
       </h1>
       <p className="text-gray-600 mb-8">
-        Browse the archive of PAC meeting minutes. Click on any meeting to read
-        the full minutes.
+        Browse the archive of PAC meeting minutes. Click on any meeting to view
+        its document.
       </p>
 
       {minutes.length > 0 ? (

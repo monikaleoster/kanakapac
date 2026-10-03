@@ -5,7 +5,7 @@ export class AdminMinutesPage {
   readonly newMinutesBtn: Locator;
   readonly titleInput: Locator;
   readonly dateInput: Locator;
-  readonly contentInput: Locator;
+  readonly fileInput: Locator;
   readonly submitBtn: Locator;
   readonly confirmDeleteBtn: Locator;
   readonly cancelDeleteBtn: Locator;
@@ -15,8 +15,8 @@ export class AdminMinutesPage {
     this.newMinutesBtn = page.getByRole('button', { name: /\+ new minutes|add minutes/i });
     this.titleInput = page.getByLabel(/title/i);
     this.dateInput = page.getByLabel(/date/i);
-    this.contentInput = page.getByLabel(/content/i);
-    this.submitBtn = page.getByRole('button', { name: /post|update|save|submit|create/i }).last();
+    this.fileInput = page.locator('input[type="file"]');
+    this.submitBtn = page.getByRole('button', { name: /post minutes|update minutes/i });
     this.confirmDeleteBtn = page.getByTestId('confirm-delete-btn');
     this.cancelDeleteBtn = page.getByTestId('cancel-delete-btn');
   }
@@ -35,14 +35,18 @@ export class AdminMinutesPage {
   }
 
   getMinutesListItems() {
-    return this.page.locator('li, tr, article, div').filter({
-      has: this.page.getByRole('button', { name: /edit/i }),
-    });
+    return this.page.locator('[data-testid="minutes-item"]');
   }
 
-  async fillMinutesForm(data: { title: string; date: string; content: string }) {
+  async fillMinutesForm(data: { title: string; date: string }) {
     await this.titleInput.fill(data.title);
     await this.dateInput.fill(data.date);
-    await this.contentInput.fill(data.content);
+  }
+
+  async uploadFile(file: { name: string; mimeType: string; buffer: Buffer }) {
+    const fileChooserPromise = this.page.waitForEvent('filechooser');
+    await this.fileInput.click();
+    const fileChooser = await fileChooserPromise;
+    await fileChooser.setFiles(file);
   }
 }
