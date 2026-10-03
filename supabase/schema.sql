@@ -72,7 +72,8 @@ CREATE TABLE IF NOT EXISTS team_members (
   role TEXT NOT NULL,
   bio TEXT,
   email TEXT,
-  sort_order INTEGER DEFAULT 0
+  sort_order INTEGER DEFAULT 0,
+  photo_url TEXT
 );
 
 -- Subscribers

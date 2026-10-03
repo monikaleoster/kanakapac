@@ -1,4 +1,5 @@
 import { getTeamMembers } from "@/lib/data";
+import TeamMemberAvatar from "@/components/TeamMemberAvatar";
 
 export const dynamic = "force-dynamic";
 
@@ -85,20 +86,28 @@ export default async function AboutPage() {
             {executive.map((member) => (
               <div
                 key={member.id}
-                className="border border-gray-100 rounded-lg p-4"
+                data-testid="team-member"
+                className="border border-gray-100 rounded-lg p-4 flex gap-4 items-start"
               >
-                <p className="text-sm text-primary-600 font-medium">
-                  {member.role}
-                </p>
-                <p className="text-lg font-semibold text-gray-900">
-                  {member.name}
-                </p>
-                <p className="text-sm text-gray-600 mt-1">{member.bio}</p>
-                {member.email && (
-                  <a href={`mailto:${member.email}`} className="text-xs text-gray-400 hover:text-primary-600 mt-2 inline-block">
-                    {member.email}
-                  </a>
-                )}
+                <TeamMemberAvatar
+                  name={member.name}
+                  photoUrl={member.photoUrl}
+                  className="w-20 h-20 sm:w-24 sm:h-24"
+                />
+                <div className="min-w-0">
+                  <p className="text-sm text-primary-600 font-medium">
+                    {member.role}
+                  </p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {member.name}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">{member.bio}</p>
+                  {member.email && (
+                    <a href={`mailto:${member.email}`} className="text-xs text-gray-400 hover:text-primary-600 mt-2 inline-block">
+                      {member.email}
+                    </a>
+                  )}
+                </div>
               </div>
             ))}
           </div>

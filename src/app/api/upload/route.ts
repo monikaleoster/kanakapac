@@ -5,7 +5,8 @@ import { isAuthenticated } from "@/lib/auth";
 const UPLOAD_CONTEXTS = {
     image: {
         bucket: "images",
-        validTypes: ["image/png", "image/jpeg", "image/jpg"],
+        validTypes: ["image/png", "image/jpeg", "image/jpg", "image/webp"],
+        maxBytes: 5 * 1024 * 1024,
     },
     document: {
         bucket: "minutes",
@@ -40,6 +41,13 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(
                 { error: "Invalid file type." },
                 { status: 400 }
+            );
+        }
+
+        if (context === "image" && file.size > UPLOAD_CONTEXTS.image.maxBytes) {
+            return NextResponse.json(
+                { error: "File is too large (max 5MB)." },
+                { status: 413 }
             );
         }
 

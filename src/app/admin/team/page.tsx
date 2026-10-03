@@ -2,6 +2,13 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import TeamMemberAvatar from "@/components/TeamMemberAvatar";
+import {
+    uploadImage,
+    resizeImage,
+    MAX_PHOTO_BYTES,
+    PHOTO_TYPES,
+} from "@/lib/uploadImage";
 
 interface TeamMember {
     id: string;
@@ -9,6 +16,7 @@ interface TeamMember {
     role: string;
     bio: string;
     email?: string;
+    photoUrl?: string;
     order: number;
 }
 
@@ -17,6 +25,7 @@ const emptyMember = {
     role: "",
     bio: "",
     email: "",
+    photoUrl: "",
     order: 0,
 };
 
@@ -26,6 +35,8 @@ export default function AdminTeamPage() {
     const [form, setForm] = useState(emptyMember);
     const [showForm, setShowForm] = useState(false);
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [uploading, setUploading] = useState(false);
+    const [photoError, setPhotoError] = useState<string | null>(null);
 
     useEffect(() => {
         fetchMembers();
@@ -47,14 +58,17 @@ export default function AdminTeamPage() {
             role: item.role,
             bio: item.bio,
             email: item.email || "",
+            photoUrl: item.photoUrl || "",
             order: item.order,
         });
+        setPhotoError(null);
         setShowForm(true);
     }
 
     function handleNew() {
         setEditing(null);
         setForm({ ...emptyMember, order: members.length + 1 });
+        setPhotoError(null);
         setShowForm(true);
     }
 
@@ -79,6 +93,31 @@ export default function AdminTeamPage() {
         setEditing(null);
         setForm(emptyMember);
         fetchMembers();
+    }
+
+    async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0];
+        e.target.value = "";
+        if (!file) return;
+        setPhotoError(null);
+        if (!PHOTO_TYPES.includes(file.type)) {
+            setPhotoError("Please choose a PNG, JPEG or WebP image.");
+            return;
+        }
+        if (file.size > MAX_PHOTO_BYTES) {
+            setPhotoError("Photo is too large (max 5MB).");
+            return;
+        }
+        setUploading(true);
+        try {
+            const url = await uploadImage(await resizeImage(file));
+            if (url) setForm((f) => ({ ...f, photoUrl: url }));
+            else setPhotoError("Upload failed. Please try again.");
+        } catch {
+            setPhotoError("Could not process that image.");
+        } finally {
+            setUploading(false);
+        }
     }
 
     function handleDelete(id: string) {
@@ -231,6 +270,43 @@ export default function AdminTeamPage() {
                             />
                         </div>
 
+                        <div>
+                            <label htmlFor="team-photo" className="block text-sm font-medium text-gray-700 mb-1">
+                                Photo (Optional)
+                            </label>
+                            <div className="flex items-center gap-4">
+                                <TeamMemberAvatar
+                                    name={form.name || "?"}
+                                    photoUrl={form.photoUrl || undefined}
+                                    className="w-16 h-16"
+                                />
+                                <div>
+                                    <input
+                                        id="team-photo"
+                                        type="file"
+                                        accept="image/png,image/jpeg,image/webp"
+                                        onChange={handlePhotoChange}
+                                        disabled={uploading}
+                                        className="text-sm"
+                                    />
+                                    {form.photoUrl && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setForm({ ...form, photoUrl: "" })}
+                                            className="block text-sm text-red-600 hover:text-red-800 mt-1"
+                                        >
+                                            Remove photo
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                            {uploading && <p className="text-xs text-gray-500 mt-1">Uploading...</p>}
+                            {photoError && <p className="text-xs text-red-600 mt-1">{photoError}</p>}
+                            <p className="text-xs text-gray-500 mt-1">
+                                Only upload photos of members who have agreed to have their photo shown publicly.
+                            </p>
+                        </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label htmlFor="team-email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -266,6 +342,7 @@ export default function AdminTeamPage() {
                         <div className="flex gap-3 pt-2">
                             <button
                                 type="submit"
+                                disabled={uploading}
                                 className="bg-primary-600 text-white px-4 py-2 rounded-md font-medium hover:bg-primary-700"
                             >
                                 {editing ? "Update Member" : "Add Member"}
