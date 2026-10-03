@@ -3,61 +3,81 @@ import { AdminMinutesPage } from '../pages/admin/AdminMinutesPage';
 
 test.use({ storageState: 'tests/.auth/admin.json' });
 
-const TEST_MINUTES = {
-  title: 'E2E Test Minutes',
-  date: '2027-03-10',
-  content: '## Agenda\n- Item 1\n- Item 2\n\nMeeting adjourned.',
-};
+const TEST_MINUTES_TITLES = ['E2E Test Minutes'];
 
 // WF-ADM-06: Manage Minutes — Create
 // WF-ADM-07: Manage Minutes — Edit
 // WF-ADM-08: Manage Minutes — Delete
 test.describe('WF-ADM-06: Minutes — Create', () => {
-  test('happy path — create minutes appears in list', async ({ page }) => {
+  test('happy path — create minutes with file upload', async ({ page }) => {
     const minutesPage = new AdminMinutesPage(page);
     await minutesPage.goto();
 
     await minutesPage.newMinutesBtn.click();
-    await minutesPage.fillMinutesForm(TEST_MINUTES);
+
+    await page.route(/\/api\/upload/, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ fileUrl: 'https://example.com/e2e-minutes.pdf' }),
+      })
+    );
+
+    await minutesPage.fillMinutesForm({ title: 'E2E Test Minutes', date: '2027-03-10' });
+    await minutesPage.uploadFile({
+      name: 'minutes.pdf',
+      mimeType: 'application/pdf',
+      buffer: Buffer.from('%PDF-1.4 content'),
+    });
+
+    await expect(minutesPage.submitBtn).toBeEnabled({ timeout: 5000 });
     await minutesPage.submitBtn.click();
 
-    await expect(page.getByText(TEST_MINUTES.title).first()).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText('E2E Test Minutes').first()).toBeVisible({ timeout: 8000 });
   });
 
-  test('edge case — no content saves minutes with title only', async ({ page }) => {
+  test('edge case — submit button disabled until a file is uploaded', async ({ page }) => {
     const minutesPage = new AdminMinutesPage(page);
     await minutesPage.goto();
 
     await minutesPage.newMinutesBtn.click();
-    await minutesPage.fillMinutesForm({ ...TEST_MINUTES, title: 'No Content Minutes', content: 'placeholder' });
-    await minutesPage.submitBtn.click();
+    await minutesPage.fillMinutesForm({ title: 'No File Minutes', date: '2027-03-11' });
 
-    await expect(page.getByText('No Content Minutes').first()).toBeVisible({ timeout: 8000 });
+    await expect(minutesPage.submitBtn).toBeDisabled();
+  });
+
+  test('edge case — invalid file type leaves submit button disabled', async ({ page }) => {
+    const minutesPage = new AdminMinutesPage(page);
+    await minutesPage.goto();
+
+    await minutesPage.newMinutesBtn.click();
+
+    await page.route(/\/api\/upload/, (route) =>
+      route.fulfill({ status: 400, body: JSON.stringify({ error: 'Invalid file type' }) })
+    );
+
+    await minutesPage.uploadFile({
+      name: 'image.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from('PNG data'),
+    });
+
+    await expect(minutesPage.submitBtn).toBeDisabled({ timeout: 3000 });
+  });
+
+  test.afterAll(async ({ request }) => {
+    const res = await request.get('/api/minutes');
+    const minutes: Array<{ id: string; title: string }> = await res.json();
+    for (const entry of minutes) {
+      if (TEST_MINUTES_TITLES.includes(entry.title)) {
+        await request.delete(`/api/minutes?id=${entry.id}`);
+      }
+    }
   });
 });
 
 test.describe('WF-ADM-07: Minutes — Edit', () => {
-  test('happy path — edit pre-fills form and saves changes', async ({ page }) => {
-    const minutesPage = new AdminMinutesPage(page);
-    await minutesPage.goto();
-
-    const editBtns = minutesPage.getEditBtns();
-    const count = await editBtns.count();
-    if (count === 0) test.skip();
-
-    await editBtns.first().click();
-
-    const titleValue = await minutesPage.titleInput.inputValue();
-    expect(titleValue.length).toBeGreaterThan(0);
-
-    const updatedTitle = 'Updated Minutes Title';
-    await minutesPage.titleInput.fill(updatedTitle);
-    await minutesPage.submitBtn.click();
-
-    await expect(page.getByText(updatedTitle).first()).toBeVisible({ timeout: 8000 });
-  });
-
-  test('edge case — edit content updates the record', async ({ page }) => {
+  test('happy path — edit title and date without re-uploading preserves fileUrl', async ({ page }) => {
     const minutesPage = new AdminMinutesPage(page);
     await minutesPage.goto();
 
@@ -65,9 +85,43 @@ test.describe('WF-ADM-07: Minutes — Edit', () => {
     if (await editBtns.count() === 0) test.skip();
 
     await editBtns.first().click();
-    await minutesPage.contentInput.fill('Updated content from E2E test.');
+    const currentTitle = await minutesPage.titleInput.inputValue();
+    expect(currentTitle.length).toBeGreaterThan(0);
+
+    await minutesPage.titleInput.fill('Updated Minutes Title');
+    // Submit without touching the file input — fileUrl should be preserved
+    // and the submit button must not be disabled by the empty file picker.
     await minutesPage.submitBtn.click();
 
+    await expect(page.getByText('Updated Minutes Title')).toBeVisible({ timeout: 8000 });
+  });
+
+  test('edge case — replacing the document on edit updates fileUrl', async ({ page }) => {
+    const minutesPage = new AdminMinutesPage(page);
+    await minutesPage.goto();
+
+    const editBtns = minutesPage.getEditBtns();
+    if (await editBtns.count() === 0) test.skip();
+
+    await editBtns.first().click();
+
+    await page.route(/\/api\/upload/, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ fileUrl: 'https://example.com/replaced-minutes.pdf' }),
+      })
+    );
+
+    await minutesPage.uploadFile({
+      name: 'replacement.pdf',
+      mimeType: 'application/pdf',
+      buffer: Buffer.from('%PDF-1.4 replacement'),
+    });
+
+    await expect(page.getByText(/replaced-minutes\.pdf/)).toBeVisible({ timeout: 5000 });
+
+    await minutesPage.submitBtn.click();
     await expect(page.locator('body')).not.toContainText(/error|500/i);
   });
 });
@@ -79,12 +133,26 @@ test.describe('WF-ADM-08: Minutes — Delete', () => {
 
     const toDelete = `Minutes To Delete ${Date.now()}`;
 
+    await page.route(/\/api\/upload/, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ fileUrl: 'https://example.com/to-delete.pdf' }),
+      })
+    );
+
     await minutesPage.newMinutesBtn.click();
-    await minutesPage.fillMinutesForm({ ...TEST_MINUTES, title: toDelete });
+    await minutesPage.fillMinutesForm({ title: toDelete, date: '2027-04-01' });
+    await minutesPage.uploadFile({
+      name: 'to-delete.pdf',
+      mimeType: 'application/pdf',
+      buffer: Buffer.from('%PDF-1.4 content'),
+    });
+    await expect(minutesPage.submitBtn).toBeEnabled({ timeout: 5000 });
     await minutesPage.submitBtn.click();
     await expect(page.getByText(toDelete).first()).toBeVisible({ timeout: 8000 });
 
-    const targetRow = page.locator('div').filter({ has: page.getByRole('heading', { name: toDelete }) }).filter({ has: page.getByRole('button', { name: /delete/i }) }).last();
+    const targetRow = minutesPage.getMinutesListItems().filter({ hasText: toDelete });
     await targetRow.getByRole('button', { name: /delete/i }).click();
 
     await expect(minutesPage.confirmDeleteBtn).toBeVisible();

@@ -118,6 +118,11 @@ public = true
 file_size_limit = "50MiB"
 allowed_mime_types = ["image/png", "image/jpeg"]
 
+# Meeting-minutes (and Policies) document uploads. Must stay public — see
+# supabase/migrations/20261003000001_set_minutes_bucket_public.sql for why.
+[storage.buckets.minutes]
+public = true
+
 # Allow connections via S3 compatible clients
 [storage.s3_protocol]
 enabled = true

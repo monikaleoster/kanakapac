@@ -1,4 +1,4 @@
-import { getEvents, saveEvent, deleteEvent, getUpcomingEvents, getPastEvents, getEventById, getArticles, getPublishedArticles, getArticleById, saveArticle, deleteArticle } from '@/lib/data';
+import { getEvents, saveEvent, deleteEvent, getUpcomingEvents, getPastEvents, getEventById, getArticles, getPublishedArticles, getArticleById, saveArticle, deleteArticle, getMinutes, getMinutesById, saveMinutes } from '@/lib/data';
 import { supabase } from '@/lib/supabase';
 
 // Mock supabase correctly
@@ -322,6 +322,72 @@ describe('data.ts lib unit tests', () => {
             await deleteArticle('123');
             expect((supabase as any).delete).toHaveBeenCalled();
             expect((supabase as any).eq).toHaveBeenCalledWith('id', '123');
+        });
+    });
+
+    describe('Minutes', () => {
+        beforeEach(() => {
+            // Reset `.eq` to its default chainable behavior — an earlier
+            // test (e.g. deleteArticle) may have left it mocked to resolve
+            // directly, since mockResolvedValue persists across clearAllMocks().
+            (supabase as any).eq.mockReturnThis();
+        });
+
+        it('getMinutes maps file_url to fileUrl', async () => {
+            const mockData = [
+                { id: '1', title: 'March Meeting', date: '2026-03-01', file_url: 'https://example.com/march.pdf', created_at: '2026-03-01T00:00:00Z' },
+                { id: '2', title: 'February Meeting', date: '2026-02-01', file_url: null, created_at: '2026-02-01T00:00:00Z' },
+            ];
+            (supabase.from('minutes').select('*') as any).order.mockResolvedValue({ data: mockData, error: null });
+
+            const minutes = await getMinutes();
+            expect(minutes).toHaveLength(2);
+            expect(minutes[0].fileUrl).toBe('https://example.com/march.pdf');
+            expect(minutes[1].fileUrl).toBe('');
+        });
+
+        it('getMinutes returns empty array on error', async () => {
+            (supabase.from('minutes').select('*') as any).order.mockResolvedValue({ data: null, error: { message: 'DB Error' } });
+            const minutes = await getMinutes();
+            expect(minutes).toEqual([]);
+        });
+
+        it('getMinutesById returns undefined when not found', async () => {
+            (supabase.from('minutes').select('*') as any).eq('id', '1').single.mockResolvedValue({ data: null, error: { message: 'Not found' } });
+
+            const minutes = await getMinutesById('1');
+            expect(minutes).toBeUndefined();
+        });
+
+        it('getMinutesById returns mapped minutes', async () => {
+            const mockData = { id: '1', title: 'March Meeting', date: '2026-03-01', file_url: 'https://example.com/march.pdf', created_at: '2026-03-01T00:00:00Z' };
+            (supabase.from('minutes').select('*') as any).eq('id', '1').single.mockResolvedValue({ data: mockData, error: null });
+
+            const minutes = await getMinutesById('1');
+            expect(minutes?.fileUrl).toBe('https://example.com/march.pdf');
+            expect(minutes?.title).toBe('March Meeting');
+        });
+
+        it('saveMinutes calls upsert with a file_url-keyed payload', async () => {
+            (supabase.from('minutes') as any).upsert.mockResolvedValue({ error: null });
+
+            const minutes = {
+                id: '1',
+                title: 'March Meeting',
+                date: '2026-03-01',
+                fileUrl: 'https://example.com/march.pdf',
+                createdAt: '2026-03-01T00:00:00Z',
+            };
+
+            await saveMinutes(minutes);
+
+            expect((supabase as any).upsert).toHaveBeenCalledWith({
+                id: '1',
+                title: 'March Meeting',
+                date: '2026-03-01',
+                file_url: 'https://example.com/march.pdf',
+                created_at: '2026-03-01T00:00:00Z',
+            });
         });
     });
 });

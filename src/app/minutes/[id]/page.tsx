@@ -10,16 +10,6 @@ export async function generateStaticParams() {
   return minutes.map((m) => ({ id: m.id }));
 }
 
-function renderMarkdown(content: string): string {
-  return content
-    .replace(/^### (.+)$/gm, '<h3 class="text-lg font-semibold mt-6 mb-2">$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2 class="text-xl font-bold mt-8 mb-3">$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1 class="text-2xl font-bold mt-8 mb-4">$1</h1>')
-    .replace(/^- (.+)$/gm, '<li class="ml-4 list-disc">$1</li>')
-    .replace(/\n\n/g, '<br/><br/>')
-    .replace(/\n/g, '<br/>');
-}
-
 export default async function MinutesDetailPage({
   params,
 }: {
@@ -49,10 +39,20 @@ export default async function MinutesDetailPage({
           <p className="text-gray-500 mt-2">{formatDate(minutes.date)}</p>
         </header>
 
-        <div
-          className="prose prose-gray max-w-none"
-          dangerouslySetInnerHTML={{ __html: renderMarkdown(minutes.content || "") }}
-        />
+        <div className="prose prose-gray max-w-none">
+          {minutes.fileUrl ? (
+            <a
+              href={minutes.fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary-600 hover:text-primary-800 font-medium"
+            >
+              View Document
+            </a>
+          ) : (
+            <p className="text-gray-400 italic">No document yet</p>
+          )}
+        </div>
       </article>
     </div>
   );
