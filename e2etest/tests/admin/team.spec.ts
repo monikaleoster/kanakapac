@@ -15,7 +15,15 @@ const TEST_MEMBER_NAMES = [
   'Public Visible Member',
   'No Email Member',
   'Default Order Member',
+  'Photo Member',
+  'No Photo Member',
 ];
+
+// 1x1 transparent PNG
+const TINY_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+  'base64'
+);
 
 // WF-ADM-15: Manage Team Members — Create
 // WF-ADM-16: Manage Team Members — Edit
@@ -79,6 +87,57 @@ test.describe('WF-ADM-15: Team — Create', () => {
     const members: Array<{ id: string; name: string }> = await res.json();
     for (const member of members) {
       if (TEST_MEMBER_NAMES.includes(member.name)) {
+        await request.delete(`/api/team?id=${member.id}`);
+      }
+    }
+  });
+});
+
+test.describe('WF-ADM-19: Team — Photo', () => {
+  test('happy path — uploaded photo shows on About page with name as alt text', async ({ page }) => {
+    const teamPage = new AdminTeamPage(page);
+    await teamPage.goto();
+
+    await teamPage.addMemberBtn.click();
+    await teamPage.fillMemberForm({ ...TEST_MEMBER, name: 'Photo Member' });
+    await teamPage.photoInput.setInputFiles({ name: 'photo.png', mimeType: 'image/png', buffer: TINY_PNG });
+    await expect(page.getByRole('button', { name: /remove photo/i })).toBeVisible({ timeout: 10000 });
+    await teamPage.submitBtn.click();
+    await expect(page.getByText('Photo Member').first()).toBeVisible({ timeout: 8000 });
+
+    await page.goto('/about');
+    await expect(page.getByRole('img', { name: 'Photo Member' })).toBeVisible();
+  });
+
+  test('edge case — member without photo shows initials placeholder on About page', async ({ page }) => {
+    const teamPage = new AdminTeamPage(page);
+    await teamPage.goto();
+
+    await teamPage.addMemberBtn.click();
+    await teamPage.fillMemberForm({ ...TEST_MEMBER, name: 'No Photo Member' });
+    await teamPage.submitBtn.click();
+    await expect(page.getByText('No Photo Member').first()).toBeVisible({ timeout: 8000 });
+
+    await page.goto('/about');
+    const card = page.getByTestId('team-member').filter({ hasText: 'No Photo Member' });
+    await expect(card.getByTestId('team-member-initials')).toHaveText('NP');
+    await expect(card.getByRole('img')).toHaveCount(0);
+  });
+
+  test('edge case — non-image file is rejected with an error', async ({ page }) => {
+    const teamPage = new AdminTeamPage(page);
+    await teamPage.goto();
+
+    await teamPage.addMemberBtn.click();
+    await teamPage.photoInput.setInputFiles({ name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('hi') });
+    await expect(page.getByText(/png, jpeg or webp/i)).toBeVisible();
+  });
+
+  test.afterAll(async ({ request }) => {
+    const res = await request.get('/api/team');
+    const members: Array<{ id: string; name: string }> = await res.json();
+    for (const member of members) {
+      if (member.name === 'Photo Member' || member.name === 'No Photo Member') {
         await request.delete(`/api/team?id=${member.id}`);
       }
     }

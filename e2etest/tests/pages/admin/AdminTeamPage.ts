@@ -8,6 +8,7 @@ export class AdminTeamPage {
   readonly bioInput: Locator;
   readonly emailInput: Locator;
   readonly orderInput: Locator;
+  readonly photoInput: Locator;
   readonly submitBtn: Locator;
   readonly confirmDeleteBtn: Locator;
   readonly cancelDeleteBtn: Locator;
@@ -20,6 +21,7 @@ export class AdminTeamPage {
     this.bioInput = page.getByLabel(/bio/i);
     this.emailInput = page.getByLabel(/email/i);
     this.orderInput = page.getByLabel(/order|display order/i);
+    this.photoInput = page.locator('#team-photo');
     this.submitBtn = page.getByRole('button', { name: /save|submit|add|update/i }).last();
     this.confirmDeleteBtn = page.getByTestId('confirm-delete-btn');
     this.cancelDeleteBtn = page.getByTestId('cancel-delete-btn');
