@@ -93,7 +93,8 @@ test.describe('WF-ADM-07: Minutes — Edit', () => {
     // and the submit button must not be disabled by the empty file picker.
     await minutesPage.submitBtn.click();
 
-    await expect(page.getByText('Updated Minutes Title')).toBeVisible({ timeout: 8000 });
+    // The edit renames a shared entry that earlier runs also renamed, so several may match.
+    await expect(page.getByText('Updated Minutes Title').first()).toBeVisible({ timeout: 8000 });
   });
 
   test('edge case — replacing the document on edit updates fileUrl', async ({ page }) => {
