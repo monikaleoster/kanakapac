@@ -20,6 +20,7 @@ export class MinutesDetailPage {
   }
 
   getViewDocumentLink() {
-    return this.page.getByRole('link', { name: /view document/i });
+    // PDFs render inline with "Open in new tab"; non-PDF files keep "View Document".
+    return this.page.getByRole('link', { name: /view document|open in new tab/i }).first();
   }
 }
