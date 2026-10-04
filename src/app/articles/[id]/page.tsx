@@ -1,5 +1,7 @@
 import { getArticleById } from "@/lib/data";
 import { sanitizeHtml } from "@/lib/sanitize";
+import { splitArticleBody } from "@/lib/articleBody";
+import PdfViewer from "@/components/PdfViewer";
 import { formatDateTime } from "@/lib/format";
 import { getArticleCoverImage } from "@/lib/articleCover";
 import { getAbsoluteUrl } from "@/lib/siteUrl";
@@ -83,10 +85,15 @@ export default async function ArticleDetailPage({
             </div>
           </header>
 
-          <div
-            className="prose prose-gray max-w-none"
-            dangerouslySetInnerHTML={{ __html: sanitizeHtml(article.body) }}
-          />
+          <div className="prose prose-gray max-w-none">
+            {splitArticleBody(sanitizeHtml(article.body)).map((segment, i) =>
+              segment.type === "pdf" ? (
+                <PdfViewer key={i} url={segment.url} title={segment.title} />
+              ) : (
+                <div key={i} dangerouslySetInnerHTML={{ __html: segment.html }} />
+              )
+            )}
+          </div>
         </div>
       </article>
     </div>

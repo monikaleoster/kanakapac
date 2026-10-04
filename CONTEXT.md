@@ -12,8 +12,14 @@ _Avoid_: Post, blog post, news item
 The two states of an Article's lifecycle. A Draft is saved but not publicly visible; Published is public. This lifecycle belongs to Article alone — Announcement and Minutes are public the moment they exist, with no Draft state.
 
 **Body** (Article):
-An Article's full rich-text content, stored as sanitized HTML with embedded inline images.
+An Article's full rich-text content, stored as sanitized HTML with embedded inline images. It may also contain embedded PDF links (see **Embedded PDF**).
 _Avoid_: Content (reserved for the plain-string field on Announcement)
+
+**PDF viewer**:
+The inline, scrollable, lazy-loaded display of a PDF on a public page, with "Open in new tab" and "Download" links. Used for Minutes whose document is a PDF and for Embedded PDFs in an Article Body.
+
+**Embedded PDF** (Article):
+A PDF placed in an Article Body as an anchor to the PDF URL marked `data-pdf-viewer`. The public Article page shows it in the PDF viewer; emails and no-JavaScript views show a plain link.
 
 **Excerpt**:
 The short plain-text teaser for an Article shown on the listing page, distinct from its Body.

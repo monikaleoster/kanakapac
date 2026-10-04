@@ -74,4 +74,32 @@ describe('sanitizeHtml', () => {
     it('returns empty string for empty input', () => {
         expect(sanitizeHtml('')).toBe('');
     });
+
+    it('preserves data-pdf-viewer on anchors', () => {
+        const result = sanitizeHtml(
+            '<p><a href="https://example.com/a.pdf" data-pdf-viewer="true">Minutes</a></p>'
+        );
+
+        expect(result).toContain('data-pdf-viewer');
+        expect(result).toContain('href="https://example.com/a.pdf"');
+    });
+
+    it('does not allow data-pdf-viewer on non-anchor tags, nor other data attributes', () => {
+        const result = sanitizeHtml('<p data-pdf-viewer="true" data-other="x">Hi</p>');
+
+        expect(result).not.toContain('data-pdf-viewer');
+        expect(result).not.toContain('data-other');
+    });
+
+    it('still strips iframes, scripts and handlers next to a PDF anchor', () => {
+        const result = sanitizeHtml(
+            '<a href="https://example.com/a.pdf" data-pdf-viewer="true" onclick="x()">PDF</a>' +
+                '<iframe src="https://evil.example.com"></iframe><script>alert(1)</script>'
+        );
+
+        expect(result).toContain('data-pdf-viewer');
+        expect(result).not.toContain('onclick');
+        expect(result).not.toContain('<iframe');
+        expect(result).not.toContain('<script');
+    });
 });

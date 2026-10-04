@@ -47,6 +47,7 @@ export function sanitizeHtml(html: string): string {
         allowedTags: ALLOWED_TAGS,
         allowedAttributes: {
             "*": ALLOWED_ATTR,
+            a: [...ALLOWED_ATTR, "data-pdf-viewer"],
         },
         allowedSchemes: ["http", "https", "mailto"],
         allowProtocolRelative: false,
