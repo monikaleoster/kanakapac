@@ -1,5 +1,7 @@
 import { getMinutesById, getMinutes } from "@/lib/data";
 import { formatDate } from "@/lib/format";
+import { isPdfUrl } from "@/lib/pdf";
+import PdfViewer from "@/components/PdfViewer";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -40,7 +42,9 @@ export default async function MinutesDetailPage({
         </header>
 
         <div className="prose prose-gray max-w-none">
-          {minutes.fileUrl ? (
+          {minutes.fileUrl && isPdfUrl(minutes.fileUrl) ? (
+            <PdfViewer url={minutes.fileUrl} title={minutes.title} />
+          ) : minutes.fileUrl ? (
             <a
               href={minutes.fileUrl}
               target="_blank"

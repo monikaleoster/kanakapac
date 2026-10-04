@@ -3,8 +3,32 @@
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
+import Link from "@tiptap/extension-link";
 import { useRef, useState } from "react";
-import { uploadImage } from "@/lib/uploadImage";
+import { uploadImage, uploadPdf } from "@/lib/uploadImage";
+
+// Link that also carries data-pdf-viewer, so an embedded PDF survives editing
+// and saving. In the editor it shows as a chip rather than a live viewer.
+const PdfAwareLink = Link.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      pdfViewer: {
+        default: null,
+        parseHTML: (element) =>
+          element.hasAttribute("data-pdf-viewer") ? "true" : null,
+        renderHTML: (attributes) =>
+          attributes.pdfViewer
+            ? {
+                "data-pdf-viewer": "true",
+                class:
+                  "inline-block rounded-full bg-red-50 px-3 py-0.5 text-sm font-medium text-red-700 no-underline before:content-['PDF_·_']",
+              }
+            : {},
+      },
+    };
+  },
+});
 
 interface ArticleEditorProps {
   content: string;
@@ -13,11 +37,13 @@ interface ArticleEditorProps {
 
 export default function ArticleEditor({ content, onChange }: ArticleEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
 
   const editor = useEditor({
     immediatelyRender: false,
-    extensions: [StarterKit, Image],
+    extensions: [StarterKit.configure({ link: false }), PdfAwareLink, Image],
     content,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
@@ -46,16 +72,53 @@ export default function ArticleEditor({ content, onChange }: ArticleEditorProps)
     }
   }
 
+  async function handlePdfFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !editor) return;
+
+    setUploadError("");
+    setUploading(true);
+    try {
+      const result = await uploadPdf(file);
+      if ("error" in result) {
+        setUploadError(result.error);
+        return;
+      }
+      const defaultText = file.name.replace(/\.pdf$/i, "");
+      const text = window.prompt("Link text for the PDF", defaultText);
+      if (text === null) return;
+      editor
+        .chain()
+        .focus()
+        .insertContent({
+          type: "text",
+          text: text.trim() || defaultText,
+          marks: [
+            {
+              type: "link",
+              attrs: { href: result.fileUrl, pdfViewer: "true" },
+            },
+          ],
+        })
+        .run();
+    } finally {
+      setUploading(false);
+    }
+  }
+
   function toggleLink() {
     if (!editor) return;
-    const previousUrl = editor.getAttributes("link").href as string | undefined;
+    const previous = editor.getAttributes("link");
+    const previousUrl = previous.href as string | undefined;
     const url = window.prompt("URL", previousUrl || "");
     if (url === null) return;
     if (url === "") {
       editor.chain().focus().extendMarkRange("link").unsetLink().run();
       return;
     }
-    editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
+    editor.chain().focus().extendMarkRange("link").setLink({ href: url, pdfViewer: previous.pdfViewer ?? null } as never)
+      .run();
   }
 
   if (!editor) return null;
@@ -132,7 +195,27 @@ export default function ArticleEditor({ content, onChange }: ArticleEditorProps)
           onChange={handleImageFileChange}
           className="hidden"
         />
+        <button
+          type="button"
+          onClick={() => pdfInputRef.current?.click()}
+          disabled={uploading}
+          className="px-2 py-1 text-sm rounded font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+        >
+          Insert PDF
+        </button>
+        <input
+          ref={pdfInputRef}
+          type="file"
+          accept="application/pdf"
+          onChange={handlePdfFileChange}
+          className="hidden"
+        />
       </div>
+      {uploadError && (
+        <p role="alert" className="mt-1 text-sm text-red-600">
+          {uploadError}
+        </p>
+      )}
       <EditorContent editor={editor} />
     </div>
   );

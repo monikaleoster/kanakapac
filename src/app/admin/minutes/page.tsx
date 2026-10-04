@@ -67,14 +67,17 @@ export default function AdminMinutesPage() {
         body: formData,
       });
 
-      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setUploadError(data.error ?? "File upload failed.");
+        return;
+      }
 
-      const data = await res.json();
       setUploadError("");
       setForm((prev) => ({ ...prev, fileUrl: data.fileUrl }));
     } catch (error) {
       console.error("Upload error:", error);
-      setUploadError("File upload failed. Invalid file type.");
+      setUploadError("File upload failed.");
     }
   }
 

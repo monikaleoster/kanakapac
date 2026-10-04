@@ -8,6 +8,11 @@ const UPLOAD_CONTEXTS = {
         validTypes: ["image/png", "image/jpeg", "image/jpg", "image/webp"],
         maxBytes: 5 * 1024 * 1024,
     },
+    pdf: {
+        bucket: "minutes",
+        validTypes: ["application/pdf"],
+        maxBytes: 4 * 1024 * 1024,
+    },
     document: {
         bucket: "minutes",
         validTypes: [
@@ -34,7 +39,8 @@ export async function POST(request: NextRequest) {
 
         const url = new URL(request.url);
         const contextParam = url.searchParams.get("context") ?? "document";
-        const context = contextParam === "image" ? "image" : "document";
+        const context =
+            contextParam === "image" || contextParam === "pdf" ? contextParam : "document";
         const { bucket, validTypes } = UPLOAD_CONTEXTS[context];
 
         if (!(validTypes as readonly string[]).includes(file.type)) {
@@ -44,9 +50,17 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        if (context === "image" && file.size > UPLOAD_CONTEXTS.image.maxBytes) {
+        // The host limits request bodies to ~4.5MB, so PDFs are capped at 4MB
+        // in every context (including Minutes documents).
+        const maxBytes =
+            context === "image"
+                ? UPLOAD_CONTEXTS.image.maxBytes
+                : file.type === "application/pdf"
+                  ? UPLOAD_CONTEXTS.pdf.maxBytes
+                  : undefined;
+        if (maxBytes !== undefined && file.size > maxBytes) {
             return NextResponse.json(
-                { error: "File is too large (max 5MB)." },
+                { error: `File is too large (max ${maxBytes / (1024 * 1024)}MB).` },
                 { status: 413 }
             );
         }

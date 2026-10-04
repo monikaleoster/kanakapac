@@ -10,6 +10,25 @@ export async function uploadImage(file: File): Promise<string | null> {
   return data.fileUrl as string;
 }
 
+export type UploadResult = { fileUrl: string } | { error: string };
+
+/** Uploads a PDF via the `pdf` context, surfacing the server's error message. */
+export async function uploadPdf(file: File): Promise<UploadResult> {
+  const formData = new FormData();
+  formData.append("file", file);
+  try {
+    const res = await fetch("/api/upload?context=pdf", {
+      method: "POST",
+      body: formData,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return { error: data.error ?? "Upload failed." };
+    return { fileUrl: data.fileUrl as string };
+  } catch {
+    return { error: "Upload failed." };
+  }
+}
+
 export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 export const PHOTO_TYPES = ["image/png", "image/jpeg", "image/webp"];
 

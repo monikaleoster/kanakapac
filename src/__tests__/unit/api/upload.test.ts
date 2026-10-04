@@ -113,6 +113,63 @@ describe('POST /api/upload', () => {
         );
     });
 
+    it('accepts a PDF in the pdf context and stores it in the minutes bucket', async () => {
+        (uploadBuffer as jest.Mock).mockResolvedValue('https://cdn.example.com/minutes/a.pdf');
+        const formData = new FormData();
+        formData.append('file', makeFile('a.pdf', 'application/pdf'));
+
+        const res = await POST(makeRequest(formData, 'pdf'));
+
+        expect(res.status).toBe(200);
+        expect(uploadBuffer).toHaveBeenCalledWith(
+            'minutes',
+            expect.stringMatching(/a\.pdf$/),
+            expect.anything(),
+            'application/pdf'
+        );
+    });
+
+    it('returns 400 for a non-PDF in the pdf context', async () => {
+        const formData = new FormData();
+        formData.append('file', makeFile('a.txt', 'text/plain'));
+
+        const res = await POST(makeRequest(formData, 'pdf'));
+
+        expect(res.status).toBe(400);
+        expect(uploadBuffer).not.toHaveBeenCalled();
+    });
+
+    it('returns 413 with a clear message for a PDF over 4MB', async () => {
+        const formData = new FormData();
+        formData.append('file', makeFile('big.pdf', 'application/pdf', 'x'.repeat(4 * 1024 * 1024 + 1)));
+
+        const res = await POST(makeRequest(formData, 'pdf'));
+        const data = await res.json();
+
+        expect(res.status).toBe(413);
+        expect(data.error).toMatch(/4MB/);
+        expect(uploadBuffer).not.toHaveBeenCalled();
+    });
+
+    it('returns 413 for a PDF over 4MB in the default document context', async () => {
+        const formData = new FormData();
+        formData.append('file', makeFile('big.pdf', 'application/pdf', 'x'.repeat(4 * 1024 * 1024 + 1)));
+
+        const res = await POST(makeRequest(formData));
+
+        expect(res.status).toBe(413);
+    });
+
+    it('still accepts non-PDF documents in the document context', async () => {
+        (uploadBuffer as jest.Mock).mockResolvedValue('https://cdn.example.com/minutes/a.txt');
+        const formData = new FormData();
+        formData.append('file', makeFile('a.txt', 'text/plain'));
+
+        const res = await POST(makeRequest(formData));
+
+        expect(res.status).toBe(200);
+    });
+
     it('returns 500 without leaking details when the upload helper throws', async () => {
         (uploadBuffer as jest.Mock).mockRejectedValue(new Error('bucket full'));
         const formData = new FormData();
