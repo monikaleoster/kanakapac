@@ -1,7 +1,8 @@
 import { Resend } from 'resend';
 import { sanitizeHtml } from './sanitize';
 
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Kanaka PAC <onboarding@resend.dev>';
+const DEFAULT_FROM_EMAIL = 'Kanaka PAC <onboarding@resend.dev>';
+const DEFAULT_REPLY_TO = 'kcpactreasurer@gmail.com';
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
 function getResendClient(): Resend {
@@ -16,15 +17,63 @@ export interface SendEmailOptions {
   to: string | string[];
   subject: string;
   html: string;
+  /**
+   * Display name the mail appears to come from. The sending address itself is
+   * the platform's one verified address and is not a caller's choice.
+   * Omitted, the configured from-address is used exactly as configured.
+   */
+  fromName?: string;
   replyTo?: string;
 }
 
-export async function sendEmail({ to, subject, html, replyTo }: SendEmailOptions) {
+// Characters that cannot appear in an unquoted RFC 5322 display name.
+const DISPLAY_NAME_SPECIALS = /[(),.:;<>@[\]"\\]/;
+
+/**
+ * Renders a display name safe to place in a from-header. A display name is
+ * admin-entered text, so CR and LF are collapsed to a space — left in, they
+ * would let the name inject headers of its own — and a name containing
+ * RFC 5322 specials is quoted rather than emitted bare.
+ */
+function renderDisplayName(fromName: string): string {
+  const name = fromName.replace(/[\r\n]+/g, ' ').trim();
+  if (!name) return '';
+  if (!DISPLAY_NAME_SPECIALS.test(name)) return name;
+  return `"${name.replace(/([\\"])/g, '\\$1')}"`;
+}
+
+/** Pulls the bare address out of a configured from-value, if it holds one. */
+function extractAddress(configured: string): string | undefined {
+  const bracketed = configured.match(/<([^>]+)>/)?.[1]?.trim();
+  if (bracketed) return bracketed;
+
+  const bare = configured.trim();
+  return bare.includes('@') ? bare : undefined;
+}
+
+/**
+ * Builds the from-header. With no usable display name the configured value is
+ * used verbatim, so an address configured with its own display name is
+ * untouched. The address is always the platform's configured one; only the
+ * display name varies per School.
+ */
+function buildFromHeader(fromName?: string): string {
+  const configured = process.env.RESEND_FROM_EMAIL || DEFAULT_FROM_EMAIL;
+  if (!fromName) return configured;
+
+  const name = renderDisplayName(fromName);
+  const address = extractAddress(configured);
+  if (!name || !address) return configured;
+
+  return `${name} <${address}>`;
+}
+
+export async function sendEmail({ to, subject, html, fromName, replyTo }: SendEmailOptions) {
   const resend = getResendClient();
   const { data, error } = await resend.emails.send({
-    from: FROM_EMAIL,
+    from: buildFromHeader(fromName),
     to: Array.isArray(to) ? to : [to],
-    replyTo: replyTo ?? 'kcpactreasurer@gmail.com',
+    replyTo: replyTo ?? DEFAULT_REPLY_TO,
     subject,
     html,
   });
