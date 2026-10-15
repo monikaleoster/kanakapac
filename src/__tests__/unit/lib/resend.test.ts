@@ -108,7 +108,7 @@ describe('sendEmail sender identity', () => {
         expect(send).toHaveBeenCalledWith(
             expect.objectContaining({
                 from: 'Kanaka PAC <onboarding@resend.dev>',
-                replyTo: 'kcpactreasurer@gmail.com',
+                replyTo: 'support@vectorlocal.ca',
                 to: ['parent@example.com'],
             })
         );

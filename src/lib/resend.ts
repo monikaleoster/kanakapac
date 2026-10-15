@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 import { sanitizeHtml } from './sanitize';
 
 const DEFAULT_FROM_EMAIL = 'Kanaka PAC <onboarding@resend.dev>';
-const DEFAULT_REPLY_TO = 'kcpactreasurer@gmail.com';
+const DEFAULT_REPLY_TO = 'support@vectorlocal.ca';
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
 function getResendClient(): Resend {

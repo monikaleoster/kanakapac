@@ -42,7 +42,7 @@ describe('POST /api/contact', () => {
         expect(sendEmail).toHaveBeenCalledTimes(2);
         expect(sendEmail).toHaveBeenCalledWith(
             expect.objectContaining({
-                to: 'kcpactreasurer@gmail.com',
+                to: 'support@vectorlocal.ca',
                 replyTo: 'jane@example.com',
                 subject: '[Contact Form] Question about bylaws',
             })
