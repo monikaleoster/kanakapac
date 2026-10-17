@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const recipient = process.env.CONTACT_EMAIL ?? 'kcpactreasurer@gmail.com';
+  const recipient = process.env.CONTACT_EMAIL ?? 'support@vectorlocal.ca';
 
   try {
     await Promise.all([

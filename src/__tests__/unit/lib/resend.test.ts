@@ -81,3 +81,213 @@ describe('buildArticleEmailHtml', () => {
         expect(html).toContain('&lt;script&gt;');
     });
 });
+
+describe('sendEmail sender identity', () => {
+    const send = jest.fn();
+
+    beforeEach(() => {
+        jest.resetModules();
+        send.mockReset();
+        send.mockResolvedValue({ data: { id: 'msg_1' }, error: null });
+        process.env.RESEND_API_KEY = 'test-key';
+        delete process.env.RESEND_FROM_EMAIL;
+    });
+
+    async function loadSendEmail() {
+        jest.doMock('resend', () => ({
+            Resend: jest.fn().mockImplementation(() => ({ emails: { send } })),
+        }));
+        return (await import('@/lib/resend')).sendEmail;
+    }
+
+    it('defaults to the platform from-address and reply-to when neither is given', async () => {
+        const sendEmail = await loadSendEmail();
+
+        await sendEmail({ to: 'parent@example.com', subject: 'Hi', html: '<p>Hi</p>' });
+
+        expect(send).toHaveBeenCalledWith(
+            expect.objectContaining({
+                from: 'Kanaka PAC <onboarding@resend.dev>',
+                replyTo: 'support@vectorlocal.ca',
+                to: ['parent@example.com'],
+            })
+        );
+    });
+
+    it('uses the configured from-address verbatim when no display name is given', async () => {
+        process.env.RESEND_FROM_EMAIL = 'Configured Name <mail@pacsolution.ca>';
+        const sendEmail = await loadSendEmail();
+
+        await sendEmail({ to: 'parent@example.com', subject: 'Hi', html: '<p>Hi</p>' });
+
+        expect(send).toHaveBeenCalledWith(
+            expect.objectContaining({ from: 'Configured Name <mail@pacsolution.ca>' })
+        );
+    });
+
+    it('overrides the display name while keeping the verified sending address', async () => {
+        process.env.RESEND_FROM_EMAIL = 'Kanaka PAC <mail@pacsolution.ca>';
+        const sendEmail = await loadSendEmail();
+
+        await sendEmail({
+            to: 'parent@example.com',
+            subject: 'Hi',
+            html: '<p>Hi</p>',
+            fromName: 'Westview PAC',
+        });
+
+        expect(send).toHaveBeenCalledWith(
+            expect.objectContaining({ from: 'Westview PAC <mail@pacsolution.ca>' })
+        );
+    });
+
+    it('composes a display name onto a bare configured address', async () => {
+        process.env.RESEND_FROM_EMAIL = 'mail@pacsolution.ca';
+        const sendEmail = await loadSendEmail();
+
+        await sendEmail({
+            to: 'parent@example.com',
+            subject: 'Hi',
+            html: '<p>Hi</p>',
+            fromName: 'Westview PAC',
+        });
+
+        expect(send).toHaveBeenCalledWith(
+            expect.objectContaining({ from: 'Westview PAC <mail@pacsolution.ca>' })
+        );
+    });
+
+    it('sends replies to the given reply-to instead of the default', async () => {
+        const sendEmail = await loadSendEmail();
+
+        await sendEmail({
+            to: 'parent@example.com',
+            subject: 'Hi',
+            html: '<p>Hi</p>',
+            replyTo: 'westview.pac@example.com',
+        });
+
+        expect(send).toHaveBeenCalledWith(
+            expect.objectContaining({ replyTo: 'westview.pac@example.com' })
+        );
+    });
+
+    it('accepts a display name and a reply-to together', async () => {
+        process.env.RESEND_FROM_EMAIL = 'Kanaka PAC <mail@pacsolution.ca>';
+        const sendEmail = await loadSendEmail();
+
+        await sendEmail({
+            to: ['a@example.com', 'b@example.com'],
+            subject: 'Hi',
+            html: '<p>Hi</p>',
+            fromName: 'Westview PAC',
+            replyTo: 'westview.pac@example.com',
+        });
+
+        expect(send).toHaveBeenCalledWith(
+            expect.objectContaining({
+                from: 'Westview PAC <mail@pacsolution.ca>',
+                replyTo: 'westview.pac@example.com',
+                to: ['a@example.com', 'b@example.com'],
+            })
+        );
+    });
+    it('neutralises a CR/LF header-injection attempt in the display name', async () => {
+        process.env.RESEND_FROM_EMAIL = 'Kanaka PAC <mail@pacsolution.ca>';
+        const sendEmail = await loadSendEmail();
+
+        await sendEmail({
+            to: 'parent@example.com',
+            subject: 'Hi',
+            html: '<p>Hi</p>',
+            fromName: 'Westview PAC\r\nBcc: attacker@example.com',
+        });
+
+        const from = send.mock.calls[0][0].from as string;
+        // The payload must not survive as a second header line, and must stay
+        // inside a quoted display name rather than becoming header syntax.
+        expect(from).not.toMatch(/[\r\n]/);
+        expect(from).toBe('"Westview PAC Bcc: attacker@example.com" <mail@pacsolution.ca>');
+    });
+
+    it('quotes a display name containing RFC 5322 special characters', async () => {
+        process.env.RESEND_FROM_EMAIL = 'Kanaka PAC <mail@pacsolution.ca>';
+        const sendEmail = await loadSendEmail();
+
+        await sendEmail({
+            to: 'parent@example.com',
+            subject: 'Hi',
+            html: '<p>Hi</p>',
+            fromName: 'Smith, John PAC',
+        });
+
+        expect(send).toHaveBeenCalledWith(
+            expect.objectContaining({ from: '"Smith, John PAC" <mail@pacsolution.ca>' })
+        );
+    });
+
+    it('escapes embedded quotes and backslashes in the display name', async () => {
+        process.env.RESEND_FROM_EMAIL = 'Kanaka PAC <mail@pacsolution.ca>';
+        const sendEmail = await loadSendEmail();
+
+        await sendEmail({
+            to: 'parent@example.com',
+            subject: 'Hi',
+            html: '<p>Hi</p>',
+            fromName: 'The "Big" PAC',
+        });
+
+        expect(send).toHaveBeenCalledWith(
+            expect.objectContaining({ from: '"The \\"Big\\" PAC" <mail@pacsolution.ca>' })
+        );
+    });
+
+    it('leaves a plain display name unquoted', async () => {
+        process.env.RESEND_FROM_EMAIL = 'Kanaka PAC <mail@pacsolution.ca>';
+        const sendEmail = await loadSendEmail();
+
+        await sendEmail({
+            to: 'parent@example.com',
+            subject: 'Hi',
+            html: '<p>Hi</p>',
+            fromName: 'Westview PAC',
+        });
+
+        expect(send).toHaveBeenCalledWith(
+            expect.objectContaining({ from: 'Westview PAC <mail@pacsolution.ca>' })
+        );
+    });
+
+    it('ignores a display name that is empty once stripped', async () => {
+        process.env.RESEND_FROM_EMAIL = 'Kanaka PAC <mail@pacsolution.ca>';
+        const sendEmail = await loadSendEmail();
+
+        await sendEmail({
+            to: 'parent@example.com',
+            subject: 'Hi',
+            html: '<p>Hi</p>',
+            fromName: '   ',
+        });
+
+        expect(send).toHaveBeenCalledWith(
+            expect.objectContaining({ from: 'Kanaka PAC <mail@pacsolution.ca>' })
+        );
+    });
+
+    it('ignores a display name when the configured from-address is unusable', async () => {
+        process.env.RESEND_FROM_EMAIL = 'Not An Address';
+        const sendEmail = await loadSendEmail();
+
+        await sendEmail({
+            to: 'parent@example.com',
+            subject: 'Hi',
+            html: '<p>Hi</p>',
+            fromName: 'Westview PAC',
+        });
+
+        // Better to send as configured than to emit 'Westview PAC <Not An Address>'.
+        expect(send).toHaveBeenCalledWith(
+            expect.objectContaining({ from: 'Not An Address' })
+        );
+    });
+});

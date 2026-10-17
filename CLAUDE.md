@@ -39,7 +39,11 @@ This is the official website for the **Parent Advisory Council (PAC)**. It serve
 │   │   ├── AnnouncementCard.tsx
 │   │   └── MinutesCard.tsx
 │   └── lib/                  # Utility functions and data access
-│       ├── data.ts           # Read/write JSON data files
+│       ├── data/             # Data access, one module per resource
+│       │   ├── index.ts      # Re-exports the whole data-layer surface
+│       │   ├── events.ts     # One module per resource: events, rsvps,
+│       │   └── ...           # minutes, announcements, articles, policies,
+│       │                     # teamMembers, subscribers, settings
 │       └── auth.ts           # Admin authentication helpers
 ├── data/                     # JSON data storage
 │   ├── events.json

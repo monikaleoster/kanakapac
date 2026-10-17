@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PAC Solution — one-page overview</title>
+<style>
+  @page { size: Letter; margin: 0; }
+  :root {
+    --blue: #1e3fae;
+    --blue-dark: #16307f;
+    --ink: #111827;
+    --muted: #556070;
+    --line: #dde3ec;
+    --tint: #f3f6fc;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+    color: var(--ink);
+    width: 8.5in; height: 11in;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .page { width: 8.5in; height: 11in; padding: 0; display: flex; flex-direction: column; }
+
+  header { background: var(--blue); color: #fff; padding: 18px 42px 16px; }
+  .eyebrow { font-size: 9.5px; letter-spacing: 1.6px; text-transform: uppercase; opacity: .82; margin: 0 0 6px; }
+  h1 { font-size: 25px; line-height: 1.1; margin: 0 0 6px; letter-spacing: -0.4px; }
+  .sub { font-size: 11px; line-height: 1.42; margin: 0; opacity: .93; max-width: 6.3in; }
+
+  main { padding: 14px 42px 0; flex: 1; }
+
+  h2 { font-size: 10px; letter-spacing: 1.3px; text-transform: uppercase; color: var(--blue);
+       margin: 0 0 7px; padding-bottom: 3px; border-bottom: 1.5px solid var(--line); }
+
+  .shots { display: grid; grid-template-columns: 1.45fr 1fr 1fr 1fr; gap: 7px; margin-bottom: 13px; }
+  .shot { border: 1px solid var(--line); border-radius: 5px; overflow: hidden; background: #fff; }
+  .shot img { display: block; width: 100%; height: 112px; object-fit: cover; object-position: top left; }
+  .shot .cap { font-size: 8px; color: var(--muted); padding: 4px 6px; background: var(--tint);
+               text-transform: uppercase; letter-spacing: .7px; }
+  .shot.lead img { height: 112px; }
+
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-bottom: 11px; }
+  ul { margin: 0; padding: 0; list-style: none; }
+  li { font-size: 10.4px; line-height: 1.4; margin-bottom: 6px; padding-left: 13px; position: relative; color: #243040; }
+  li::before { content: ""; position: absolute; left: 0; top: 5px; width: 5px; height: 5px;
+               border-radius: 50%; background: var(--blue); }
+  li b { color: var(--ink); }
+
+  .band { background: var(--tint); border: 1px solid var(--line); border-radius: 6px;
+          padding: 11px 15px; margin-bottom: 11px; }
+  .band h3 { font-size: 10px; letter-spacing: 1.3px; text-transform: uppercase; color: var(--blue); margin: 0 0 8px; }
+  .three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .three p { margin: 0; font-size: 10.4px; line-height: 1.42; color: #243040; }
+  .three p b { display: block; font-size: 10.6px; margin-bottom: 2px; color: var(--ink); }
+
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-bottom: 10px; }
+  .step { border: 1px solid var(--line); border-radius: 6px; padding: 8px 11px; }
+  .step .n { display: inline-flex; align-items: center; justify-content: center;
+             width: 15px; height: 15px; border-radius: 50%; background: var(--blue); color: #fff;
+             font-size: 9px; font-weight: 700; margin-bottom: 4px; }
+  .step p { margin: 0; font-size: 9.7px; line-height: 1.38; color: #243040; }
+  .step b { display: block; font-size: 10.1px; margin-bottom: 1px; }
+
+  .band.next { background: #fff; border-color: #c9d6f2; }
+  .band.next .three p b { color: var(--blue-dark); }
+  .note { margin: 7px 0 0; font-size: 9.1px; line-height: 1.4; color: var(--muted); }
+  .note b { color: #243040; }
+
+  footer { background: var(--blue-dark); color: #fff; padding: 12px 42px; margin-top: auto; }
+  .ftrow { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+  .ftrow p { margin: 0; font-size: 10.3px; line-height: 1.45; }
+  .ftrow .ask { font-size: 11.5px; font-weight: 700; }
+  .ftrow .detail { opacity: .88; font-size: 9.8px; }
+  .live { font-size: 10px; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.3);
+          border-radius: 4px; padding: 7px 11px; white-space: nowrap; text-align: center; }
+  .live b { display: block; font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <p class="eyebrow">PAC Solution · A website platform for Parent Advisory Councils</p>
+    <h1>Give your PAC a real website — not another Facebook group</h1>
+    <p class="sub">Events, meeting minutes, announcements and newsletters in one place parents can find, on a site your
+      executive updates in minutes without a webmaster. Already running live for Kanaka Creek Elementary PAC; now
+      opening to other schools.</p>
+  </header>
+
+  <main>
+
+    <div class="shots">
+      <div class="shot lead">
+        <img src="img/home.jpg" alt="Kanaka Creek Elementary PAC homepage">
+        <div class="cap">Homepage — your name, logo and colours</div>
+      </div>
+      <div class="shot">
+        <img src="img/events.jpg" alt="Events page">
+        <div class="cap">Events &amp; RSVPs</div>
+      </div>
+      <div class="shot">
+        <img src="img/announcements.jpg" alt="Announcements page">
+        <div class="cap">Announcements</div>
+      </div>
+      <div class="shot">
+        <img src="img/minutes.jpg" alt="Meeting minutes archive">
+        <div class="cap">Minutes archive</div>
+      </div>
+    </div>
+
+    <div class="cols">
+      <section>
+        <h2>What your PAC gets</h2>
+        <ul>
+          <li><b>Your own site</b> at <b>yourschool.pacsolution.ca</b>, with your school name, logo and colour.</li>
+          <li><b>Events</b> with date, time, location and parent RSVPs, split into upcoming and past.</li>
+          <li><b>Meeting minutes</b> archived by meeting date — PDFs open right in the page, no download needed.</li>
+          <li><b>Announcements</b> for time-sensitive notices, flagged urgent and auto-expiring.</li>
+          <li><b>Articles</b> — longer pieces with cover images, saved as drafts until you publish.</li>
+          <li><b>Policies, executive team and a contact form</b> that reaches your PAC, not anyone else's.</li>
+          <li><b>Email updates</b> sent to parents who subscribe, from your PAC's name and reply-to address.</li>
+        </ul>
+      </section>
+      <section>
+        <h2>Why it keeps working after the first month</h2>
+        <ul>
+          <li><b>Several people can post.</b> Your whole executive can have access, so the site does not stall when one
+            person is busy.</li>
+          <li><b>No passwords to share or lose.</b> Members sign in by clicking a link emailed to them.</li>
+          <li><b>Roles that match your council.</b> Owners manage who has access; editors post content.</li>
+          <li><b>Handover is one click.</b> When the exec changes, the new chair is added and the old one removed —
+            nothing is locked in a personal account.</li>
+          <li><b>Parents need no account.</b> Nothing to join, nothing to install, everything public and searchable.</li>
+          <li><b>Nothing to maintain.</b> No hosting, plugins, updates or webmaster on your side.</li>
+        </ul>
+      </section>
+    </div>
+
+    <div class="band">
+      <h3>Your school's content stays your school's</h3>
+      <div class="three">
+        <p><b>Separate by design</b>Each school's site is walled off from every other one. Your editors only ever see
+          your content, and parents only ever see yours.</p>
+        <p><b>Yours to take</b>Ask any time and your whole site — content, documents, subscriber list — is exported for
+          you in full.</p>
+        <p><b>Nothing disappears</b>If your PAC pauses, the site is set aside, not deleted. Your history stays intact.</p>
+      </div>
+    </div>
+
+    <div class="band next">
+      <h3>Coming next — included as it ships</h3>
+      <div class="three">
+        <p><b>Online payments</b>Hot lunch, spirit wear and event tickets paid online, instead of cash in envelopes and
+          a spreadsheet to reconcile.</p>
+        <p><b>Donation button</b>Collect for fundraisers and special projects straight from your site.</p>
+        <p><b>Volunteer sign-ups &amp; surveys</b>Fill shifts and ask parents what they think, without another sign-up
+          sheet or outside tool.</p>
+      </div>
+      <p class="note"><b>No extra charge for new features</b> — your PAC gets them as they are released. Payment and
+        donation features are the one exception: the card processor charges its own fee per transaction, which is
+        theirs, not ours.</p>
+    </div>
+
+    <h2>Getting started takes one email</h2>
+    <div class="steps">
+      <div class="step">
+        <span class="n">1</span>
+        <p><b>Tell us three things</b>Your school name, the web address you want, and the email of the first person who
+          should manage it.</p>
+      </div>
+      <div class="step">
+        <span class="n">2</span>
+        <p><b>Your site goes live</b>Set up the same day with your branding and contact details, ready for content.</p>
+      </div>
+      <div class="step">
+        <span class="n">3</span>
+        <p><b>Your exec takes over</b>Add the rest of your council, post your first minutes and events, and send parents
+          the link.</p>
+      </div>
+    </div>
+
+  </main>
+
+  <footer>
+    <div class="ftrow">
+      <p>
+        <span class="ask">Want your PAC on it? Reply with your school name and we'll set it up.</span><br>
+        <span class="detail">Built and run by vectorlocal.ca · support@vectorlocal.ca</span>
+      </p>
+      <div class="live"><b>See it working</b>www.kanakacreekpac.ca</div>
+    </div>
+  </footer>
+
+</div>
+</body>
+</html>
