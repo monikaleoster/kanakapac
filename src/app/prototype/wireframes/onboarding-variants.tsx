@@ -13,7 +13,7 @@ export function OnboardA() {
         <Field label="School name" value="Maple Ridge Elementary" />
         <Field label="PAC name" value="Maple Ridge PAC" hint="Shown alongside the School name. Often different." />
         <div>
-          <Field label="Subdomain" value="maple-ridge" hint="maple-ridge.pacplatform.ca" />
+          <Field label="Subdomain" value="maple-ridge" hint="maple-ridge.pacsolution.ca" />
           <div className="mt-1 flex items-center gap-2">
             <Chip tone="dark">Available</Chip>
             <span className="text-[10px] text-gray-400">Permanent. Cannot be changed after creation.</span>
@@ -65,7 +65,7 @@ export function OnboardB() {
           <div className="flex-1">
             <Field label="Subdomain" value="maple-ridge" />
           </div>
-          <span className="pb-2 font-mono text-xs text-gray-400">.pacplatform.ca</span>
+          <span className="pb-2 font-mono text-xs text-gray-400">.pacsolution.ca</span>
         </div>
         <div className="mt-3 space-y-1.5 text-[11px]">
           <div className="flex items-center gap-2 text-gray-500">
@@ -123,7 +123,7 @@ export function OnboardC() {
         <SectionLabel>Live preview — what parents will see</SectionLabel>
         <div className="overflow-hidden rounded border border-gray-300 bg-white">
           <div className="border-b border-gray-200 bg-gray-50 px-3 py-1.5 font-mono text-[10px] text-gray-500">
-            maple-ridge.pacplatform.ca
+            maple-ridge.pacsolution.ca
           </div>
           <div className="flex items-center gap-2 border-b border-gray-200 px-4 py-3">
             <Box label="" h="h-7" className="w-7" />

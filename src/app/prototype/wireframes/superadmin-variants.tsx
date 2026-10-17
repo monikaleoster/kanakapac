@@ -14,7 +14,7 @@ function OperatorBar() {
     <div className="flex items-center justify-between border-b border-gray-200 bg-gray-800 px-5 py-3">
       <div className="flex items-center gap-2">
         <Chip tone="gray">Superadmin</Chip>
-        <span className="text-xs text-gray-300">pacplatform.ca/admin</span>
+        <span className="text-xs text-gray-300">pacsolution.ca/admin</span>
       </div>
       <span className="text-[11px] text-gray-400">ops@vectorlocal.ca</span>
     </div>
@@ -92,7 +92,7 @@ export function SuperB() {
                 <Box label="" h="h-8" className="w-8" />
                 <div>
                   <div className="text-sm font-medium text-gray-800">{s.name}</div>
-                  <div className="font-mono text-[10px] text-gray-400">{s.slug}.pacplatform.ca</div>
+                  <div className="font-mono text-[10px] text-gray-400">{s.slug}.pacsolution.ca</div>
                 </div>
               </div>
               <Chip tone={s.status === "Live" ? "dark" : "outline"}>{s.status}</Chip>

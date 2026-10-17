@@ -23,25 +23,25 @@ import { onboardingVariants } from "./onboarding-variants";
 const SURFACES = {
   public: {
     label: "Public school site",
-    url: "maple-ridge.pacplatform.ca",
+    url: "maple-ridge.pacsolution.ca",
     blurb: "What a parent sees. No account, one School's content only.",
     variants: publicVariants,
   },
   member: {
     label: "Member admin",
-    url: "maple-ridge.pacplatform.ca/admin",
+    url: "maple-ridge.pacsolution.ca/admin",
     blurb: "An Owner or Editor working inside their own School.",
     variants: memberVariants,
   },
   superadmin: {
     label: "Superadmin console",
-    url: "pacplatform.ca/admin",
+    url: "pacsolution.ca/admin",
     blurb: "The platform operator, across every School. Never a Member of one.",
     variants: superadminVariants,
   },
   onboarding: {
     label: "New School onboarding",
-    url: "pacplatform.ca/admin/schools/new",
+    url: "pacsolution.ca/admin/schools/new",
     blurb: "Nothing to a live School: name, permanent slug, first Owner.",
     variants: onboardingVariants,
   },
